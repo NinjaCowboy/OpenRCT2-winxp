@@ -18,6 +18,10 @@ INSTALL_DIR := $(TOPDIR)/OpenRCT2-winxp
 
 CPU_CORES := 4
 
+CURL_VERSION := 8.5.0
+CURL_DIR     := curl-$(CURL_VERSION)
+CURL_ARCHIVE := $(CURL_DIR).tar.gz
+
 FREETYPE_VERSION := 2.13.2
 FREETYPE_DIR     := freetype-$(FREETYPE_VERSION)
 FREETYPE_ARCHIVE := $(FREETYPE_DIR).tar.gz
@@ -108,21 +112,31 @@ install: $(OPENRCT2_DIR)/built
 # Removes all build artifacts (but not downloaded files)
 .PHONY: clean
 clean:
-	$(RM) -r build i686-w64-mingw32-pkg-config $(FREETYPE_DIR) $(GMP_DIR) $(LIBICONV_DIR) $(LIBPNG_DIR) $(LIBTASN1_DIR) $(LIBUNISTRING_DIR) $(LIBZIP_DIR) $(NETTLE_DIR) $(NLOHMANNJSON_DIR) $(OPENRCT2_DIR) $(OPENSSL_DIR) $(P11KIT_DIR) $(SDL2_DIR) $(SPEEXDSP_DIR) $(WINPTHREAD_DIR) $(ZLIB_DIR)
+	$(RM) -r build i686-w64-mingw32-pkg-config $(CURL_DIR) $(FREETYPE_DIR) $(GMP_DIR) $(LIBICONV_DIR) $(LIBPNG_DIR) $(LIBTASN1_DIR) $(LIBUNISTRING_DIR) $(LIBZIP_DIR) $(NETTLE_DIR) $(NLOHMANNJSON_DIR) $(OPENRCT2_DIR) $(OPENSSL_DIR) $(P11KIT_DIR) $(SDL2_DIR) $(SPEEXDSP_DIR) $(WINPTHREAD_DIR) $(ZLIB_DIR)
 
 # Removes all build artifacts and downloaded files
 .PHONY: distclean
 distclean: clean
-	$(RM) $(FREETYPE_ARCHIVE) $(GMP_ARCHIVE) $(LIBICONV_ARCHIVE) $(LIBPNG_ARCHIVE) $(LIBTASN1_ARCHIVE) $(LIBUNISTRING_ARCHIVE) $(LIBZIP_ARCHIVE) $(NETTLE_ARCHIVE) $(NLOHMANNJSON_ARCHIVE) $(OPENSSL_ARCHIVE) $(P11KIT_ARCHIVE) $(SDL2_ARCHIVE) $(SPEEXDSP_ARCHIVE) $(WINPTHREAD_ARCHIVE) $(ZLIB_ARCHIVE)
+	$(RM) $(CURL_ARCHIVE) $(FREETYPE_ARCHIVE) $(GMP_ARCHIVE) $(LIBICONV_ARCHIVE) $(LIBPNG_ARCHIVE) $(LIBTASN1_ARCHIVE) $(LIBUNISTRING_ARCHIVE) $(LIBZIP_ARCHIVE) $(NETTLE_ARCHIVE) $(NLOHMANNJSON_ARCHIVE) $(OPENSSL_ARCHIVE) $(P11KIT_ARCHIVE) $(SDL2_ARCHIVE) $(SPEEXDSP_ARCHIVE) $(WINPTHREAD_ARCHIVE) $(ZLIB_ARCHIVE)
 
 $(OPENRCT2_DIR)/extracted:
-	git clone https://github.com/OpenRCT2/OpenRCT2 --depth 1
-	cd $(@D) && patch -f -p1 < ../no-werror.patch && patch -f -p1 < ../xp-compat.patch
+	git clone --depth 1 --branch v0.4.6 https://github.com/OpenRCT2/OpenRCT2
+	cd $(@D) && patch -f -p1 < ../xp-compat.patch
 	touch $@
 
 # TODO: get static build working
-$(OPENRCT2_DIR)/configured: $(OPENRCT2_DIR)/extracted $(FREETYPE_DIR)/installed $(GMP_DIR)/installed $(LIBICONV_DIR)/installed $(LIBPNG_DIR)/installed $(LIBTASN1_DIR)/installed $(LIBUNISTRING_DIR)/installed $(LIBZIP_DIR)/installed $(NETTLE_DIR)/installed $(NLOHMANNJSON_DIR)/installed $(OPENSSL_DIR)/installed $(P11KIT_DIR)/installed $(SDL2_DIR)/installed $(SPEEXDSP_DIR)/installed $(WINPTHREAD_DIR)/installed $(ZLIB_DIR)/installed i686-w64-mingw32-pkg-config
-	mkdir -p $(@D)/_build && cd $(@D)/_build && cmake .. -DCMAKE_TOOLCHAIN_FILE=../CMakeLists_mingw.txt -DCMAKE_INSTALL_PREFIX="$(PREFIX_DIR)" -DCMAKE_PREFIX_PATH="$(PREFIX_DIR)" -DCMAKE_CXX_FLAGS="-I$(PREFIX_DIR)/include -I$(PREFIX_DIR)/include/SDL2 -fpermissive" -DDISABLE_DISCORD_RPC=ON -DDISABLE_FLAC=ON -DDISABLE_NETWORK=ON -DDISABLE_VORBIS=ON -DDOWNLOAD_OPENMSX=OFF -DDOWNLOAD_OPENSFX=OFF -DENABLE_SCRIPTING=OFF -DCMAKE_EXE_LINKER_FLAGS="-L$(PREFIX_DIR)/lib" -DPKG_CONFIG_EXECUTABLE="$(TOPDIR)/i686-w64-mingw32-pkg-config" -DSTATIC=OFF -DPORTABLE=ON
+$(OPENRCT2_DIR)/configured: $(OPENRCT2_DIR)/extracted $(CURL_DIR)/installed $(FREETYPE_DIR)/installed $(GMP_DIR)/installed $(LIBICONV_DIR)/installed $(LIBPNG_DIR)/installed $(LIBTASN1_DIR)/installed $(LIBUNISTRING_DIR)/installed $(LIBZIP_DIR)/installed $(NETTLE_DIR)/installed $(NLOHMANNJSON_DIR)/installed $(OPENSSL_DIR)/installed $(P11KIT_DIR)/installed $(SDL2_DIR)/installed $(SPEEXDSP_DIR)/installed $(WINPTHREAD_DIR)/installed $(ZLIB_DIR)/installed i686-w64-mingw32-pkg-config
+	mkdir -p $(@D)/_build && cd $(@D)/_build && cmake .. -DCMAKE_TOOLCHAIN_FILE=../CMakeLists_mingw.txt -DCMAKE_INSTALL_PREFIX="$(PREFIX_DIR)" -DCMAKE_PREFIX_PATH="$(PREFIX_DIR)" -DCMAKE_CXX_FLAGS="-I$(PREFIX_DIR)/include -I$(PREFIX_DIR)/include/SDL2 -fpermissive" -DDISABLE_DISCORD_RPC=ON -DDISABLE_FLAC=ON -DDISABLE_NETWORK=OFF -DDISABLE_VORBIS=ON -DDOWNLOAD_OPENMSX=OFF -DDOWNLOAD_OPENSFX=OFF -DENABLE_SCRIPTING=OFF -DCMAKE_EXE_LINKER_FLAGS="-L$(PREFIX_DIR)/lib" -DPKG_CONFIG_EXECUTABLE="$(TOPDIR)/i686-w64-mingw32-pkg-config" -DSTATIC=OFF -DPORTABLE=ON
+	sed -e 's/-mwindows//' -i $(OPENRCT2_DIR)/_build/CMakeFiles/openrct2.dir/linkLibs.rsp
+	touch $@
+
+# Curl
+
+$(CURL_ARCHIVE):
+	wget https://curl.se/download/$@
+
+$(CURL_DIR)/configured: $(CURL_DIR)/extracted $(OPENSSL_DIR)/installed
+	$(CMAKE_CONFIGURE) -DCURL_USE_OPENSSL=ON -DBUILD_TESTING=OFF -DCURL_TARGET_WINDOWS_VERSION=0x501
 	touch $@
 
 # Freetype
@@ -185,7 +199,6 @@ $(LIBZIP_ARCHIVE):
 	wget https://libzip.org/download/$@
 
 $(LIBZIP_DIR)/configured: $(LIBZIP_DIR)/extracted
-#	$(CMAKE_CONFIGURE) && sed -e '/HAVE_.*_S$$/s/define/undef/' -e '$$a#define _INC_STDIO_S' -i config.h
 	$(CMAKE_CONFIGURE) -DENABLE_WINDOWS_CRYPTO=OFF && sed -e '/HAVE_.*_S$$/s/define/undef/' -e '$$a#define _INC_STDIO_S' -i config.h
 	touch $@
 
@@ -219,7 +232,8 @@ $(OPENSSL_ARCHIVE):
 	wget https://www.openssl.org/source/$@
 
 $(OPENSSL_DIR)/configured: $(OPENSSL_DIR)/extracted
-	mkdir -p $(@D)/_build && cd $(@D)/_build && ../Configure mingw --prefix="$(PREFIX_DIR)" --cross-compile-prefix=i686-w64-mingw32- no-apps no-docs
+#	mkdir -p $(@D)/_build && cd $(@D)/_build && ../Configure mingw --prefix="$(PREFIX_DIR)" --cross-compile-prefix=i686-w64-mingw32- no-apps no-docs -D_WIN32_WINNT=0x501
+	mkdir -p $(@D)/_build && cd $(@D)/_build && ../Configure mingw --prefix="$(PREFIX_DIR)" --cross-compile-prefix=i686-w64-mingw32- no-docs -D_WIN32_WINNT=0x501
 	touch $@
 
 # p11-kit

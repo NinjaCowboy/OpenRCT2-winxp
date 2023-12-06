@@ -1,5 +1,18 @@
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index 2f7e5ace6..fff51e7b6 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -327,7 +327,7 @@ else ()
+ 
+     # Compiler flags
+     set(DEBUG_LEVEL 0 CACHE STRING "Select debug level for compilation. Use value in range 0–3.")
+-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fstrict-aliasing -Werror -Wundef -Wmissing-declarations -Winit-self -Wall -Wextra -Wshadow")
++    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fstrict-aliasing -Wundef -Wmissing-declarations -Winit-self -Wall -Wextra -Wshadow")
+     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-unknown-pragmas -Wno-missing-braces -Wno-comment -Wnonnull -Wno-unused-parameter -Wno-attributes")
+     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DDEBUG=${DEBUG_LEVEL}")
+ 
 diff --git a/src/openrct2-cli/CMakeLists.txt b/src/openrct2-cli/CMakeLists.txt
-index 7fb991e..3e97f56 100644
+index 7fb991eaa..3e97f56c9 100644
 --- a/src/openrct2-cli/CMakeLists.txt
 +++ b/src/openrct2-cli/CMakeLists.txt
 @@ -18,3 +18,7 @@ target_include_directories(${PROJECT_NAME} PRIVATE "${CMAKE_CURRENT_LIST_DIR}/..
@@ -11,7 +24,7 @@ index 7fb991e..3e97f56 100644
 +    target_link_libraries(${PROJECT_NAME} shlwapi)
 +endif ()
 diff --git a/src/openrct2-ui/UiContext.Win32.cpp b/src/openrct2-ui/UiContext.Win32.cpp
-index 90156d9..6e64cb2 100644
+index 90156d937..84b8ee599 100644
 --- a/src/openrct2-ui/UiContext.Win32.cpp
 +++ b/src/openrct2-ui/UiContext.Win32.cpp
 @@ -13,6 +13,7 @@
@@ -22,48 +35,51 @@ index 90156d9..6e64cb2 100644
  // clang-format on
  #    undef CreateWindow
  
-@@ -125,7 +126,39 @@ namespace OpenRCT2::Ui
- 
+@@ -126,6 +127,43 @@ namespace OpenRCT2::Ui
          std::string ShowFileDialogInternal(SDL_Window* window, const FileDialogDesc& desc, bool isFolder)
          {
--            std::string resultFilename;
-+			std::string resultFilename;
+             std::string resultFilename;
 +#if 1
-+			WCHAR path[MAX_PATH] = {0};
-+			OPENFILENAMEW ofn = {0};
-+			if (isFolder)
-+			{
-+				BROWSEINFOW bi = {0};
-+				bi.hwndOwner = nullptr;
-+				bi.pidlRoot = nullptr;
-+				bi.pszDisplayName = path;
-+				bi.lpszTitle = String::ToWideChar(desc.Title).c_str();
-+				bi.ulFlags = BIF_USENEWUI;
-+				bi.lpfn = nullptr;
-+				bi.lParam = 0;
-+				bi.iImage = 0;
++            WCHAR path[MAX_PATH] = {};
++            if (isFolder)
++            {
++                BROWSEINFOW bi = {};
++                std::wstring wtitle = String::ToWideChar(desc.Title);
++                bi.hwndOwner = nullptr;
++                bi.pidlRoot = nullptr;
++                bi.pszDisplayName = path;
++                bi.lpszTitle = wtitle.c_str();
++                bi.ulFlags = BIF_USENEWUI;
++                bi.lpfn = nullptr;
++                bi.lParam = 0;
++                bi.iImage = 0;
 +
-+				PIDLIST_ABSOLUTE list = SHBrowseForFolderW(&bi);
-+				//if (list == NULL)
-+				resultFilename = String::ToUtf8(path);
-+			}
-+			else
-+			{
-+				ofn.lStructSize = sizeof(ofn);
-+				ofn.lpstrFile = path;
-+				ofn.nMaxFile = MAX_PATH;
-+				ofn.lpstrFileTitle = String::ToWideChar(desc.Title).c_str();
-+				if (desc.Type == FileDialogType::Save)
-+					GetSaveFileNameW(&ofn);
-+				else
-+					GetOpenFileNameW(&ofn);
-+				resultFilename = String::ToUtf8(ofn.lpstrFile);
-+			}
++                PIDLIST_ABSOLUTE list = SHBrowseForFolderW(&bi);
++                if (list != NULL)
++                {
++                    SHGetPathFromIDListW(list, path);
++                    resultFilename = String::ToUtf8(path);
++                    MessageBoxW(NULL, path, NULL, MB_OK);
++                }
++            }
++            else
++            {
++                OPENFILENAMEW ofn = {};
++                ofn.lStructSize = sizeof(ofn);
++                ofn.lpstrFile = path;
++                ofn.nMaxFile = MAX_PATH;
++                //ofn.lpstrFileTitle = String::ToWideChar(desc.Title).c_str();
++                if (desc.Type == FileDialogType::Save)
++                    GetSaveFileNameW(&ofn);
++                else
++                    GetOpenFileNameW(&ofn);
++                resultFilename = String::ToUtf8(ofn.lpstrFile);
++            }
 +#else
  
              CCoInitialize coInitialize(COINIT_APARTMENTTHREADED);
              if (coInitialize)
-@@ -154,12 +187,13 @@ namespace OpenRCT2::Ui
+@@ -154,12 +192,13 @@ namespace OpenRCT2::Ui
  
                          // Set default directory (optional, don't fail the operation if it fails to set)
                          ComPtr<IShellItem> defaultDirectory;
@@ -78,7 +94,7 @@ index 90156d9..6e64cb2 100644
  
                          // Opt-in to automatic extensions, this will ensure extension of the selected file matches the filter
                          // Setting it to an empty string so "All Files" does not get anything appended
-@@ -191,6 +225,7 @@ namespace OpenRCT2::Ui
+@@ -191,6 +230,7 @@ namespace OpenRCT2::Ui
                      }
                  }
              }
@@ -87,7 +103,7 @@ index 90156d9..6e64cb2 100644
          }
  
 diff --git a/src/openrct2-ui/audio/AudioMixer.cpp b/src/openrct2-ui/audio/AudioMixer.cpp
-index 950a904..6d6ff26 100644
+index 950a90416..6d6ff2611 100644
 --- a/src/openrct2-ui/audio/AudioMixer.cpp
 +++ b/src/openrct2-ui/audio/AudioMixer.cpp
 @@ -11,6 +11,7 @@
@@ -99,7 +115,7 @@ index 950a904..6d6ff26 100644
  #include <openrct2/config/Config.h>
  #include <speex/speex_resampler.h>
 diff --git a/src/openrct2-ui/drawing/engines/opengl/TextureCache.h b/src/openrct2-ui/drawing/engines/opengl/TextureCache.h
-index a16a03b..12ce0fd 100644
+index a16a03b4f..12ce0fd2b 100644
 --- a/src/openrct2-ui/drawing/engines/opengl/TextureCache.h
 +++ b/src/openrct2-ui/drawing/engines/opengl/TextureCache.h
 @@ -15,6 +15,7 @@
@@ -111,10 +127,10 @@ index a16a03b..12ce0fd 100644
  #include <openrct2/common.h>
  #include <openrct2/drawing/Drawing.h>
 diff --git a/src/openrct2/CMakeLists.txt b/src/openrct2/CMakeLists.txt
-index 367939c..a281a26 100644
+index 367939c96..92a84429e 100644
 --- a/src/openrct2/CMakeLists.txt
 +++ b/src/openrct2/CMakeLists.txt
-@@ -63,6 +63,10 @@ if (NOT DISABLE_NETWORK AND WIN32)
+@@ -63,10 +63,14 @@ if (NOT DISABLE_NETWORK AND WIN32)
      target_link_libraries(${PROJECT_NAME} ws2_32 crypt32 wldap32 version winmm imm32 advapi32 shell32 ole32)
  endif ()
  
@@ -123,10 +139,99 @@ index 367939c..a281a26 100644
 +endif ()
 +
  if (NOT DISABLE_HTTP)
-     if (WIN32)
-         target_link_libraries(${PROJECT_NAME} winhttp)
+-    if (WIN32)
+-        target_link_libraries(${PROJECT_NAME} winhttp)
+-    else ()
++    #if (WIN32)
++    #    target_link_libraries(${PROJECT_NAME} winhttp)
++    #else ()
+         PKG_CHECK_MODULES(LIBCURL REQUIRED libcurl)
+ 
+         target_include_directories(${PROJECT_NAME} SYSTEM PRIVATE ${LIBCURL_INCLUDE_DIRS})
+@@ -76,7 +80,7 @@ if (NOT DISABLE_HTTP)
+         else ()
+             target_link_libraries(${PROJECT_NAME} ${LIBCURL_LIBRARIES})
+         endif ()
+-    endif ()
++    #endif ()
+ endif ()
+ 
+ if (NOT DISABLE_TTF)
+diff --git a/src/openrct2/core/Crypt.CNG.cpp b/src/openrct2/core/Crypt.CNG.cpp
+index 7e0abf6db..3dc97a906 100644
+--- a/src/openrct2/core/Crypt.CNG.cpp
++++ b/src/openrct2/core/Crypt.CNG.cpp
+@@ -7,7 +7,7 @@
+  * OpenRCT2 is licensed under the GNU General Public License version 3.
+  *****************************************************************************/
+ 
+-#if !defined(DISABLE_NETWORK) && defined(_WIN32)
++#if 0
+ 
+ #    include "Crypt.h"
+ 
+diff --git a/src/openrct2/core/Crypt.OpenSSL.cpp b/src/openrct2/core/Crypt.OpenSSL.cpp
+index c796129ad..44d683f03 100644
+--- a/src/openrct2/core/Crypt.OpenSSL.cpp
++++ b/src/openrct2/core/Crypt.OpenSSL.cpp
+@@ -7,7 +7,7 @@
+  * OpenRCT2 is licensed under the GNU General Public License version 3.
+  *****************************************************************************/
+ 
+-#if !defined(DISABLE_NETWORK) && !defined(_WIN32)
++#if !defined(DISABLE_NETWORK)
+ 
+ #    pragma GCC diagnostic push
+ #    pragma GCC diagnostic ignored "-Wdeprecated-declarations"
+diff --git a/src/openrct2/core/Http.WinHttp.cpp b/src/openrct2/core/Http.WinHttp.cpp
+index 742a5ef09..a1dc44520 100644
+--- a/src/openrct2/core/Http.WinHttp.cpp
++++ b/src/openrct2/core/Http.WinHttp.cpp
+@@ -7,7 +7,8 @@
+  * OpenRCT2 is licensed under the GNU General Public License version 3.
+  *****************************************************************************/
+ 
+-#if !defined(DISABLE_HTTP) && defined(_WIN32)
++//#if !defined(DISABLE_HTTP) && defined(_WIN32)
++#if 0
+ 
+ #    include "Http.h"
+ 
+diff --git a/src/openrct2/core/Http.cURL.cpp b/src/openrct2/core/Http.cURL.cpp
+index ec57f1c7d..55fd3c5ae 100644
+--- a/src/openrct2/core/Http.cURL.cpp
++++ b/src/openrct2/core/Http.cURL.cpp
+@@ -7,7 +7,7 @@
+  * OpenRCT2 is licensed under the GNU General Public License version 3.
+  *****************************************************************************/
+ 
+-#if !defined(DISABLE_HTTP) && !defined(_WIN32)
++#if !defined(DISABLE_HTTP) /*&& !defined(_WIN32)*/
+ 
+ #    include "Http.h"
+ 
+@@ -112,6 +112,10 @@ namespace Http
+         if (req.method == Method::PUT)
+             curl_easy_setopt(curl, CURLOPT_UPLOAD, 1L);
+ 
++        curl_easy_setopt(curl, CURLOPT_VERBOSE, 1L);
++        curl_easy_setopt(curl, CURLOPT_CAINFO, "./cacert.pem");
++        //curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, 0L);
++        //curl_easy_setopt(curl, CURLOPT_SSL_VERIFYHOST, 0L);
+         curl_easy_setopt(curl, CURLOPT_URL, req.url.c_str());
+         curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, true);
+         curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, WriteData);
+@@ -119,7 +123,7 @@ namespace Http
+         curl_easy_setopt(curl, CURLOPT_HEADERFUNCTION, HeaderCallback);
+         curl_easy_setopt(curl, CURLOPT_HEADERDATA, static_cast<void*>(&res));
+         curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, true);
+-        curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, true);
++        //curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, true);
+         curl_easy_setopt(curl, CURLOPT_USERAGENT, OPENRCT2_USER_AGENT);
+ 
+         curl_slist* chunk = nullptr;
 diff --git a/src/openrct2/core/String.cpp b/src/openrct2/core/String.cpp
-index 3215149..66a63d4 100644
+index 321514997..66a63d443 100644
 --- a/src/openrct2/core/String.cpp
 +++ b/src/openrct2/core/String.cpp
 @@ -637,17 +637,23 @@ namespace String
@@ -166,8 +271,38 @@ index 3215149..66a63d4 100644
          return String::ToUtf8(dstW);
  #else
          icu::UnicodeString str = icu::UnicodeString::fromUTF8(std::string(src));
+diff --git a/src/openrct2/network/Socket.cpp b/src/openrct2/network/Socket.cpp
+index 29fc1bb6b..993509cc9 100644
+--- a/src/openrct2/network/Socket.cpp
++++ b/src/openrct2/network/Socket.cpp
+@@ -647,16 +647,19 @@ private:
+         std::string result;
+         if (addr->sin_family == AF_INET)
+         {
+-            char str[INET_ADDRSTRLEN]{};
+-            inet_ntop(AF_INET, &addr->sin_addr, str, sizeof(str));
+-            result = str;
++            //char str[INET_ADDRSTRLEN]{};
++            //inet_ntop(AF_INET, &addr->sin_addr, str, sizeof(str));
++            //result = str;
++            result = inet_ntoa(addr->sin_addr);
+         }
+         else if (addr->sin_family == AF_INET6)
+         {
+-            auto addrv6 = reinterpret_cast<const sockaddr_in6*>(&addr);
++            //auto addrv6 = reinterpret_cast<const sockaddr_in6*>(&addr);
+             char str[INET6_ADDRSTRLEN]{};
+-            inet_ntop(AF_INET6, &addrv6->sin6_addr, str, sizeof(str));
+-            result = str;
++            //inet_ntop(AF_INET6, &addrv6->sin6_addr, str, sizeof(str));
++            DWORD len = sizeof(str);
++            WSAAddressToStringA(const_cast<sockaddr *>(reinterpret_cast<const sockaddr *>(addr)), sizeof(sockaddr_in6), nullptr, str, &len);
++			result = str;
+         }
+         return result;
+     }
 diff --git a/src/openrct2/platform/Platform.Win32.cpp b/src/openrct2/platform/Platform.Win32.cpp
-index 96c3c56..62a7c3f 100644
+index 96c3c5697..62a7c3fab 100644
 --- a/src/openrct2/platform/Platform.Win32.cpp
 +++ b/src/openrct2/platform/Platform.Win32.cpp
 @@ -19,6 +19,7 @@

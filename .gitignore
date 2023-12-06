@@ -3,6 +3,7 @@ build/
 *.tar.gz
 *.tar.xz
 *.zip
+curl-*/
 freetype-*/
 gmp-*
 i686-w64-mingw32-pkg-config
