@@ -13,6 +13,7 @@ libpng-*/
 libtasn1-*/
 libunistring-*/
 libzip-*/
+mbedtls-*/
 mingw-w64-*/
 nettle-*
 OpenRCT2/

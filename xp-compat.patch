@@ -1,5 +1,5 @@
 diff --git a/CMakeLists.txt b/CMakeLists.txt
-index 2f7e5ace6..fff51e7b6 100644
+index 2f7e5ac..fff51e7 100644
 --- a/CMakeLists.txt
 +++ b/CMakeLists.txt
 @@ -327,7 +327,7 @@ else ()
@@ -11,8 +11,21 @@ index 2f7e5ace6..fff51e7b6 100644
      set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-unknown-pragmas -Wno-missing-braces -Wno-comment -Wnonnull -Wno-unused-parameter -Wno-attributes")
      set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DDEBUG=${DEBUG_LEVEL}")
  
+diff --git a/CMakeLists_mingw.txt b/CMakeLists_mingw.txt
+index 830c503..65253a5 100644
+--- a/CMakeLists_mingw.txt
++++ b/CMakeLists_mingw.txt
+@@ -15,7 +15,7 @@ else()
+ endif(APPLE)
+ 
+ # here is the target environment located
+-SET(CMAKE_FIND_ROOT_PATH ${TARGET_ENVIRONMENT})
++#SET(CMAKE_FIND_ROOT_PATH ${TARGET_ENVIRONMENT})
+ 
+ # adjust the default behaviour of the FIND_XXX() commands:
+ # search headers and libraries in the target environment, search
 diff --git a/src/openrct2-cli/CMakeLists.txt b/src/openrct2-cli/CMakeLists.txt
-index 7fb991eaa..3e97f56c9 100644
+index 7fb991e..3e97f56 100644
 --- a/src/openrct2-cli/CMakeLists.txt
 +++ b/src/openrct2-cli/CMakeLists.txt
 @@ -18,3 +18,7 @@ target_include_directories(${PROJECT_NAME} PRIVATE "${CMAKE_CURRENT_LIST_DIR}/..
@@ -24,7 +37,7 @@ index 7fb991eaa..3e97f56c9 100644
 +    target_link_libraries(${PROJECT_NAME} shlwapi)
 +endif ()
 diff --git a/src/openrct2-ui/UiContext.Win32.cpp b/src/openrct2-ui/UiContext.Win32.cpp
-index 90156d937..84b8ee599 100644
+index 90156d9..84b8ee5 100644
 --- a/src/openrct2-ui/UiContext.Win32.cpp
 +++ b/src/openrct2-ui/UiContext.Win32.cpp
 @@ -13,6 +13,7 @@
@@ -103,7 +116,7 @@ index 90156d937..84b8ee599 100644
          }
  
 diff --git a/src/openrct2-ui/audio/AudioMixer.cpp b/src/openrct2-ui/audio/AudioMixer.cpp
-index 950a90416..6d6ff2611 100644
+index 950a904..6d6ff26 100644
 --- a/src/openrct2-ui/audio/AudioMixer.cpp
 +++ b/src/openrct2-ui/audio/AudioMixer.cpp
 @@ -11,6 +11,7 @@
@@ -115,7 +128,7 @@ index 950a90416..6d6ff2611 100644
  #include <openrct2/config/Config.h>
  #include <speex/speex_resampler.h>
 diff --git a/src/openrct2-ui/drawing/engines/opengl/TextureCache.h b/src/openrct2-ui/drawing/engines/opengl/TextureCache.h
-index a16a03b4f..12ce0fd2b 100644
+index a16a03b..12ce0fd 100644
 --- a/src/openrct2-ui/drawing/engines/opengl/TextureCache.h
 +++ b/src/openrct2-ui/drawing/engines/opengl/TextureCache.h
 @@ -15,6 +15,7 @@
@@ -127,7 +140,7 @@ index a16a03b4f..12ce0fd2b 100644
  #include <openrct2/common.h>
  #include <openrct2/drawing/Drawing.h>
 diff --git a/src/openrct2/CMakeLists.txt b/src/openrct2/CMakeLists.txt
-index 367939c96..92a84429e 100644
+index 367939c..2f6d692 100644
 --- a/src/openrct2/CMakeLists.txt
 +++ b/src/openrct2/CMakeLists.txt
 @@ -63,10 +63,14 @@ if (NOT DISABLE_NETWORK AND WIN32)
@@ -135,7 +148,7 @@ index 367939c96..92a84429e 100644
  endif ()
  
 +if (WIN32)
-+    target_link_libraries(${PROJECT_NAME} shlwapi)
++    target_link_libraries(${PROJECT_NAME} shlwapi mbedtls mbedcrypto mbedx509)
 +endif ()
 +
  if (NOT DISABLE_HTTP)
@@ -157,8 +170,25 @@ index 367939c96..92a84429e 100644
  endif ()
  
  if (NOT DISABLE_TTF)
+@@ -137,6 +141,7 @@ if (STATIC)
+                                      ${PNG_STATIC_LIBRARIES}
+                                      ${ZLIB_STATIC_LIBRARIES}
+                                      ${LIBZIP_STATIC_LIBRARIES})
++	set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -static")
+ else ()
+     if (NOT MSVC)
+         target_link_libraries(${PROJECT_NAME}
+@@ -153,7 +158,7 @@ endif ()
+ 
+ if (MINGW)
+     # Hardcode libraries used on mingw
+-    target_link_libraries(${PROJECT_NAME} crypto ws2_32 tasn1 unistring iconv p11-kit hogweed gmp nettle)
++    target_link_libraries(${PROJECT_NAME} crypto ws2_32 tasn1 unistring iconv hogweed gmp nettle)
+     # Link in libssp
+     target_link_libraries(${PROJECT_NAME} -fstack-protector-strong)
+ endif()
 diff --git a/src/openrct2/core/Crypt.CNG.cpp b/src/openrct2/core/Crypt.CNG.cpp
-index 7e0abf6db..3dc97a906 100644
+index 7e0abf6..3dc97a9 100644
 --- a/src/openrct2/core/Crypt.CNG.cpp
 +++ b/src/openrct2/core/Crypt.CNG.cpp
 @@ -7,7 +7,7 @@
@@ -171,7 +201,7 @@ index 7e0abf6db..3dc97a906 100644
  #    include "Crypt.h"
  
 diff --git a/src/openrct2/core/Crypt.OpenSSL.cpp b/src/openrct2/core/Crypt.OpenSSL.cpp
-index c796129ad..44d683f03 100644
+index c796129..44d683f 100644
 --- a/src/openrct2/core/Crypt.OpenSSL.cpp
 +++ b/src/openrct2/core/Crypt.OpenSSL.cpp
 @@ -7,7 +7,7 @@
@@ -184,7 +214,7 @@ index c796129ad..44d683f03 100644
  #    pragma GCC diagnostic push
  #    pragma GCC diagnostic ignored "-Wdeprecated-declarations"
 diff --git a/src/openrct2/core/Http.WinHttp.cpp b/src/openrct2/core/Http.WinHttp.cpp
-index 742a5ef09..a1dc44520 100644
+index 742a5ef..a1dc445 100644
 --- a/src/openrct2/core/Http.WinHttp.cpp
 +++ b/src/openrct2/core/Http.WinHttp.cpp
 @@ -7,7 +7,8 @@
@@ -198,7 +228,7 @@ index 742a5ef09..a1dc44520 100644
  #    include "Http.h"
  
 diff --git a/src/openrct2/core/Http.cURL.cpp b/src/openrct2/core/Http.cURL.cpp
-index ec57f1c7d..55fd3c5ae 100644
+index ec57f1c..55fd3c5 100644
 --- a/src/openrct2/core/Http.cURL.cpp
 +++ b/src/openrct2/core/Http.cURL.cpp
 @@ -7,7 +7,7 @@
@@ -231,7 +261,7 @@ index ec57f1c7d..55fd3c5ae 100644
  
          curl_slist* chunk = nullptr;
 diff --git a/src/openrct2/core/String.cpp b/src/openrct2/core/String.cpp
-index 321514997..66a63d443 100644
+index 3215149..66a63d4 100644
 --- a/src/openrct2/core/String.cpp
 +++ b/src/openrct2/core/String.cpp
 @@ -637,17 +637,23 @@ namespace String
@@ -272,7 +302,7 @@ index 321514997..66a63d443 100644
  #else
          icu::UnicodeString str = icu::UnicodeString::fromUTF8(std::string(src));
 diff --git a/src/openrct2/network/Socket.cpp b/src/openrct2/network/Socket.cpp
-index 29fc1bb6b..993509cc9 100644
+index 29fc1bb..993509c 100644
 --- a/src/openrct2/network/Socket.cpp
 +++ b/src/openrct2/network/Socket.cpp
 @@ -647,16 +647,19 @@ private:
@@ -302,7 +332,7 @@ index 29fc1bb6b..993509cc9 100644
          return result;
      }
 diff --git a/src/openrct2/platform/Platform.Win32.cpp b/src/openrct2/platform/Platform.Win32.cpp
-index 96c3c5697..62a7c3fab 100644
+index 96c3c56..62a7c3f 100644
 --- a/src/openrct2/platform/Platform.Win32.cpp
 +++ b/src/openrct2/platform/Platform.Win32.cpp
 @@ -19,6 +19,7 @@
