@@ -9,6 +9,7 @@ Networking and multiplayer games are supported! Due to Windows XP not having bui
 # Building from source
 
 This Makefile is designed for Unix/Linux environments and will automatically download and compile all libraries needed by OpenRCT2. Install the following prerequisites and simply type `make`.
+* bzip2
 * cmake
 * git
 * make
