@@ -17,3 +17,4 @@ This Makefile is designed for Unix/Linux environments and will automatically dow
 * perl
 * wget
 * m4
+* pkgconf (note: *not* pkg-config)
