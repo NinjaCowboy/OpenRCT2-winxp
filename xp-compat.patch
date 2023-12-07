@@ -234,6 +234,23 @@ index c796129..44d683f 100644
  
  #    pragma GCC diagnostic push
  #    pragma GCC diagnostic ignored "-Wdeprecated-declarations"
+diff --git a/src/openrct2/core/FileWatcher.cpp b/src/openrct2/core/FileWatcher.cpp
+index 439be15..08c9d75 100644
+--- a/src/openrct2/core/FileWatcher.cpp
++++ b/src/openrct2/core/FileWatcher.cpp
+@@ -164,7 +164,12 @@ FileWatcher::FileWatcher(u8string_view directoryPath)
+ FileWatcher::~FileWatcher()
+ {
+ #ifdef _WIN32
++#if _WIN32_WINNT >= 0x600
+     CancelIoEx(_directoryHandle, nullptr);
++#else
++	// TODO: CancelIo does not work on handles created on a different thread!
++	CancelIo(_directoryHandle);
++#endif
+     _watchThread.join();
+     CloseHandle(_directoryHandle);
+ #elif defined(__linux__)
 diff --git a/src/openrct2/core/Http.WinHttp.cpp b/src/openrct2/core/Http.WinHttp.cpp
 index 742a5ef..a1dc445 100644
 --- a/src/openrct2/core/Http.WinHttp.cpp
