@@ -16,3 +16,4 @@ This Makefile is designed for Unix/Linux environments and will automatically dow
 * patch
 * perl
 * wget
+* m4
