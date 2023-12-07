@@ -19,3 +19,7 @@ This Makefile is designed for Unix/Linux environments and will automatically dow
 * wget
 * m4
 * pkgconf (note: *not* pkg-config)
+
+## Debian/Ubuntu
+
+On Debian or Ubuntu, mingw-w64 comes with support for two different threading models: win32 and posix. The C++ thread library only works with the posix threading model, though win32 is selected by defaut. To fix this, run `sudo update-alternatives --config i686-w64-mingw-w64-gcc` and `sudo update-alternatives --config i686-w64-mingw-w64-g++`, and select the option with the `-posix` suffix.
