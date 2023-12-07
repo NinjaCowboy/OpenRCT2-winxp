@@ -17,6 +17,7 @@ STATIC ?= 1
 
 CMAKE_BUILD_TYPE ?= Release
 
+MAKE_DIR := $(dir $(abspath $(lastword $(MAKEFILE_LIST))))
 TOPDIR := $(shell pwd)
 PREFIX_DIR := $(TOPDIR)/build
 INSTALL_DIR := $(TOPDIR)/OpenRCT2-winxp
@@ -94,7 +95,7 @@ ZLIB_VERSION := 1.3
 ZLIB_DIR     := zlib-$(ZLIB_VERSION)
 ZLIB_ARCHIVE := $(ZLIB_DIR).tar.gz
 
-CMAKE_CONFIGURE = mkdir -p $(@D)/_build && cd $(@D)/_build && cmake .. -DCMAKE_BUILD_TYPE=$(CMAKE_BUILD_TYPE) -DCMAKE_TOOLCHAIN_FILE=$(TOPDIR)/mingw32.cmake -DCMAKE_INSTALL_PREFIX=$(PREFIX_DIR) -DCMAKE_PREFIX_PATH=$(PREFIX_DIR) -DCMAKE_FIND_ROOT_PATH="/usr/i686-w64-mingw32;$(PREFIX_DIR)"
+CMAKE_CONFIGURE = mkdir -p $(@D)/_build && cd $(@D)/_build && cmake .. -DCMAKE_BUILD_TYPE=$(CMAKE_BUILD_TYPE) -DCMAKE_TOOLCHAIN_FILE=$(MAKE_DIR)/mingw32.cmake -DCMAKE_INSTALL_PREFIX=$(PREFIX_DIR) -DCMAKE_PREFIX_PATH=$(PREFIX_DIR) -DCMAKE_FIND_ROOT_PATH="/usr/i686-w64-mingw32;$(PREFIX_DIR)"
 
 AUTOTOOLS_CONFIGURE = mkdir -p $(@D)/_build && cd $(@D)/_build && ../configure --host=i686-w64-mingw32 --prefix=$(PREFIX_DIR) CFLAGS="-I$(PREFIX_DIR)/include" LDFLAGS="-L$(PREFIX_DIR)/lib"
 
@@ -130,12 +131,14 @@ distclean: clean
 
 $(OPENRCT2_DIR)/extracted:
 	git clone --depth 1 --branch v0.4.6 https://github.com/OpenRCT2/OpenRCT2
-	cd $(@D) && patch -f -p1 < ../xp-compat.patch
+	cd $(@D) && patch -f -p1 < $(MAKE_DIR)/xp-compat.patch
 	touch $@
 
 $(OPENRCT2_DIR)/configured: $(OPENRCT2_DIR)/extracted $(CURL_DIR)/installed $(FREETYPE_DIR)/installed $(GMP_DIR)/installed $(LIBICONV_DIR)/installed $(LIBPNG_DIR)/installed $(LIBTASN1_DIR)/installed $(LIBUNISTRING_DIR)/installed $(LIBZIP_DIR)/installed $(MBEDTLS_DIR)/installed $(NETTLE_DIR)/installed $(NLOHMANNJSON_DIR)/installed $(OPENSSL_DIR)/installed $(SDL2_DIR)/installed $(SPEEXDSP_DIR)/installed $(WINPTHREAD_DIR)/installed $(ZLIB_DIR)/installed i686-w64-mingw32-pkg-config
 	mkdir -p $(@D)/_build && cd $(@D)/_build && cmake .. -DCMAKE_TOOLCHAIN_FILE=../CMakeLists_mingw.txt -DCMAKE_INSTALL_PREFIX="$(PREFIX_DIR)" -DCMAKE_PREFIX_PATH="$(PREFIX_DIR)" -DCMAKE_CXX_FLAGS="-I$(PREFIX_DIR)/include -I$(PREFIX_DIR)/include/SDL2 -fpermissive $(if $(STATIC),-DCURL_STATICLIB,)" -DDISABLE_DISCORD_RPC=ON -DDISABLE_FLAC=ON -DDISABLE_NETWORK=OFF -DDISABLE_VORBIS=ON -DDOWNLOAD_OPENMSX=OFF -DDOWNLOAD_OPENSFX=OFF -DENABLE_SCRIPTING=OFF -DCMAKE_EXE_LINKER_FLAGS="-L$(PREFIX_DIR)/lib" -DPKG_CONFIG_EXECUTABLE="$(TOPDIR)/i686-w64-mingw32-pkg-config" -DSTATIC=$(if $(STATIC),ON,OFF) -DPORTABLE=ON --debug-find -DCMAKE_LIBRARY_PATH="$(PREFIX_DIR)" -DCMAKE_INCLUDE_PATH="$(PREFIX_DIR)" -DCMAKE_FIND_USE_CMAKE_SYSTEM_PATH=FALSE -DCMAKE_BUILD_TYPE=$(CMAKE_BUILD_TYPE)
+ifeq ($(CMAKE_BUILD_TYPE),Debug)
 	sed -e 's/-mwindows//' -i $(OPENRCT2_DIR)/_build/CMakeFiles/openrct2.dir/linkLibs.rsp
+endif
 	touch $@
 
 # Curl
@@ -265,7 +268,7 @@ $(P11KIT_ARCHIVE):
 	wget https://github.com/p11-glue/p11-kit/releases/download/$(P11KIT_VERSION)/$@
 
 $(P11KIT_DIR)/configured: $(P11KIT_DIR)/extracted
-	cd $(@D) && meson setup --reconfigure --prefix "$(PREFIX_DIR)" --cross-file $(TOPDIR)/mingw32.meson _build
+	cd $(@D) && meson setup --reconfigure --prefix "$(PREFIX_DIR)" --cross-file $(MAKE_DIR)/mingw32.meson _build
 	touch $@
 
 $(P11KIT_DIR)/built: $(P11KIT_DIR)/configured
