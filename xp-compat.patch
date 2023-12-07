@@ -140,7 +140,7 @@ index a16a03b..12ce0fd 100644
  #include <openrct2/common.h>
  #include <openrct2/drawing/Drawing.h>
 diff --git a/src/openrct2/CMakeLists.txt b/src/openrct2/CMakeLists.txt
-index 367939c..2f6d692 100644
+index 367939c..6f798db 100644
 --- a/src/openrct2/CMakeLists.txt
 +++ b/src/openrct2/CMakeLists.txt
 @@ -63,10 +63,14 @@ if (NOT DISABLE_NETWORK AND WIN32)
@@ -183,7 +183,7 @@ index 367939c..2f6d692 100644
  if (MINGW)
      # Hardcode libraries used on mingw
 -    target_link_libraries(${PROJECT_NAME} crypto ws2_32 tasn1 unistring iconv p11-kit hogweed gmp nettle)
-+    target_link_libraries(${PROJECT_NAME} crypto ws2_32 tasn1 unistring iconv hogweed gmp nettle)
++    target_link_libraries(${PROJECT_NAME} crypto ws2_32 iconv)
      # Link in libssp
      target_link_libraries(${PROJECT_NAME} -fstack-protector-strong)
  endif()
