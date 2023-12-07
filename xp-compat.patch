@@ -36,6 +36,27 @@ index 7fb991e..3e97f56 100644
 +if (WIN32)
 +    target_link_libraries(${PROJECT_NAME} shlwapi)
 +endif ()
+diff --git a/src/openrct2-ui/CMakeLists.txt b/src/openrct2-ui/CMakeLists.txt
+index 3478684..8e1da8d 100644
+--- a/src/openrct2-ui/CMakeLists.txt
++++ b/src/openrct2-ui/CMakeLists.txt
+@@ -28,6 +28,7 @@ else ()
+     endif ()
+     if (NOT DISABLE_VORBIS)
+         PKG_CHECK_MODULES(OGG REQUIRED IMPORTED_TARGET ogg)
++		PKG_CHECK_MODULES(VORBIS REQUIRED IMPORTED_TARGET vorbis)
+         PKG_CHECK_MODULES(VORBISFILE REQUIRED IMPORTED_TARGET vorbisfile)
+     endif ()
+ endif ()
+@@ -83,7 +84,7 @@ if (NOT DISABLE_VORBIS)
+     if (NOT MSVC AND NOT WIN32)
+         target_link_libraries(${PROJECT_NAME} PkgConfig::OGG PkgConfig::VORBISFILE)
+     else ()
+-        target_link_libraries(${PROJECT_NAME} ${OGG_LDFLAGS} ${VORBISFILE_LDFLAGS})
++        target_link_libraries(${PROJECT_NAME} ${OGG_LDFLAGS} ${VORBISFILE_LDFLAGS} ${VORBIS_LDFLAGS})
+     endif ()
+ endif ()
+ 
 diff --git a/src/openrct2-ui/UiContext.Win32.cpp b/src/openrct2-ui/UiContext.Win32.cpp
 index 90156d9..84b8ee5 100644
 --- a/src/openrct2-ui/UiContext.Win32.cpp

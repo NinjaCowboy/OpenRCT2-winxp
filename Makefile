@@ -160,8 +160,7 @@ $(CURL_ARCHIVE):
 
 # I can't seem to get OpenSSL to statically link, so we use mbedtls instead. It's much smaller, too!
 $(CURL_DIR)/configured: $(CURL_DIR)/extracted $(MBEDTLS_DIR)/installed $(ZLIB_DIR)/installed
-	$(CMAKE_CONFIGURE) -DCURL_USE_MBEDTLS=ON -DCURL_USE_OPENSSL=OFF -DCURL_TARGET_WINDOWS_VERSION=0x501 -DBUILD_STATIC_LIBS=ON -DBUILD_SHARED_LIBS=$(if $(STATIC),OFF,ON) -DBUILD_CURL_EXE=OFF --debug-find
-#	$(AUTOTOOLS_CONFIGURE) --enable-shared --enable-static --with-openssl
+	$(CMAKE_CONFIGURE) -DCURL_USE_MBEDTLS=ON -DCURL_USE_OPENSSL=OFF -DCURL_TARGET_WINDOWS_VERSION=0x501 -DBUILD_STATIC_LIBS=ON -DBUILD_SHARED_LIBS=$(if $(STATIC),OFF,ON) -DBUILD_CURL_EXE=OFF -DHTTP_ONLY=ON
 	touch $@
 
 # FLAC
@@ -169,7 +168,7 @@ $(CURL_DIR)/configured: $(CURL_DIR)/extracted $(MBEDTLS_DIR)/installed $(ZLIB_DI
 $(FLAC_ARCHIVE):
 	wget https://downloads.xiph.org/releases/flac/$@
 
-$(FLAC_DIR)/configured: $(FLAC_DIR)/extracted
+$(FLAC_DIR)/configured: $(FLAC_DIR)/extracted $(LIBOGG_DIR)/installed
 	$(CMAKE_CONFIGURE) -DBUILD_CXXLIBS=OFF -DBUILD_DOCS=OFF -DBUILD_EXAMPLES=OFF -DBUILD_PROGRAMS=OFF
 	touch $@
 
