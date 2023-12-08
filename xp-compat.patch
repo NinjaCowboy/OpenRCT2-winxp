@@ -58,7 +58,7 @@ index 3478684..8e1da8d 100644
  endif ()
  
 diff --git a/src/openrct2-ui/UiContext.Win32.cpp b/src/openrct2-ui/UiContext.Win32.cpp
-index 90156d9..84b8ee5 100644
+index 90156d9..aa5b873 100644
 --- a/src/openrct2-ui/UiContext.Win32.cpp
 +++ b/src/openrct2-ui/UiContext.Win32.cpp
 @@ -13,6 +13,7 @@
@@ -113,22 +113,7 @@ index 90156d9..84b8ee5 100644
  
              CCoInitialize coInitialize(COINIT_APARTMENTTHREADED);
              if (coInitialize)
-@@ -154,12 +192,13 @@ namespace OpenRCT2::Ui
- 
-                         // Set default directory (optional, don't fail the operation if it fails to set)
-                         ComPtr<IShellItem> defaultDirectory;
--                        if (SUCCEEDED(SHCreateItemFromParsingName(
-+                        /*if (SUCCEEDED(SHCreateItemFromParsingName(
-                                 String::ToWideChar(desc.InitialDirectory).c_str(), nullptr,
-                                 IID_PPV_ARGS(defaultDirectory.GetAddressOf()))))
-                         {
-                             fileDialog->SetFolder(defaultDirectory.Get());
-                         }
-+                        */
- 
-                         // Opt-in to automatic extensions, this will ensure extension of the selected file matches the filter
-                         // Setting it to an empty string so "All Files" does not get anything appended
-@@ -191,6 +230,7 @@ namespace OpenRCT2::Ui
+@@ -191,6 +229,7 @@ namespace OpenRCT2::Ui
                      }
                  }
              }
@@ -234,23 +219,6 @@ index c796129..44d683f 100644
  
  #    pragma GCC diagnostic push
  #    pragma GCC diagnostic ignored "-Wdeprecated-declarations"
-diff --git a/src/openrct2/core/FileWatcher.cpp b/src/openrct2/core/FileWatcher.cpp
-index 439be15..08c9d75 100644
---- a/src/openrct2/core/FileWatcher.cpp
-+++ b/src/openrct2/core/FileWatcher.cpp
-@@ -164,7 +164,12 @@ FileWatcher::FileWatcher(u8string_view directoryPath)
- FileWatcher::~FileWatcher()
- {
- #ifdef _WIN32
-+#if _WIN32_WINNT >= 0x600
-     CancelIoEx(_directoryHandle, nullptr);
-+#else
-+	// TODO: CancelIo does not work on handles created on a different thread!
-+	CancelIo(_directoryHandle);
-+#endif
-     _watchThread.join();
-     CloseHandle(_directoryHandle);
- #elif defined(__linux__)
 diff --git a/src/openrct2/core/Http.WinHttp.cpp b/src/openrct2/core/Http.WinHttp.cpp
 index 742a5ef..a1dc445 100644
 --- a/src/openrct2/core/Http.WinHttp.cpp
@@ -266,7 +234,7 @@ index 742a5ef..a1dc445 100644
  #    include "Http.h"
  
 diff --git a/src/openrct2/core/Http.cURL.cpp b/src/openrct2/core/Http.cURL.cpp
-index ec57f1c..55fd3c5 100644
+index ec57f1c..7d3a99e 100644
 --- a/src/openrct2/core/Http.cURL.cpp
 +++ b/src/openrct2/core/Http.cURL.cpp
 @@ -7,7 +7,7 @@
@@ -278,60 +246,20 @@ index ec57f1c..55fd3c5 100644
  
  #    include "Http.h"
  
-@@ -112,6 +112,10 @@ namespace Http
+@@ -112,6 +112,8 @@ namespace Http
          if (req.method == Method::PUT)
              curl_easy_setopt(curl, CURLOPT_UPLOAD, 1L);
  
 +        curl_easy_setopt(curl, CURLOPT_VERBOSE, 1L);
 +        curl_easy_setopt(curl, CURLOPT_CAINFO, "./cacert.pem");
-+        //curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, 0L);
-+        //curl_easy_setopt(curl, CURLOPT_SSL_VERIFYHOST, 0L);
          curl_easy_setopt(curl, CURLOPT_URL, req.url.c_str());
          curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, true);
          curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, WriteData);
-@@ -119,7 +123,7 @@ namespace Http
-         curl_easy_setopt(curl, CURLOPT_HEADERFUNCTION, HeaderCallback);
-         curl_easy_setopt(curl, CURLOPT_HEADERDATA, static_cast<void*>(&res));
-         curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, true);
--        curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, true);
-+        //curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, true);
-         curl_easy_setopt(curl, CURLOPT_USERAGENT, OPENRCT2_USER_AGENT);
- 
-         curl_slist* chunk = nullptr;
 diff --git a/src/openrct2/core/String.cpp b/src/openrct2/core/String.cpp
-index 3215149..66a63d4 100644
+index 3215149..2fb9306 100644
 --- a/src/openrct2/core/String.cpp
 +++ b/src/openrct2/core/String.cpp
-@@ -637,17 +637,23 @@ namespace String
-         auto srcW = ToWideChar(src);
- 
-         // Measure how long the destination needs to be
--        auto requiredSize = LCMapStringEx(
--            LOCALE_NAME_USER_DEFAULT, LCMAP_UPPERCASE | LCMAP_LINGUISTIC_CASING, srcW.c_str(), static_cast<int>(srcW.length()),
--            nullptr, 0, nullptr, nullptr, 0);
-+        //auto requiredSize = LCMapStringEx(
-+        //    LOCALE_NAME_USER_DEFAULT, LCMAP_UPPERCASE | LCMAP_LINGUISTIC_CASING, srcW.c_str(), static_cast<int>(srcW.length()),
-+        //    nullptr, 0, nullptr, nullptr, 0);
-+        auto requiredSize = LCMapStringW(
-+			LOCALE_USER_DEFAULT, LCMAP_UPPERCASE | LCMAP_LINGUISTIC_CASING, srcW.c_str(), static_cast<int>(srcW.length()),
-+			nullptr, 0);
- 
-         auto dstW = std::wstring();
-         dstW.resize(requiredSize);
- 
-         // Transform the string
--        auto result = LCMapStringEx(
-+        /*auto result = LCMapStringEx(
-             LOCALE_NAME_USER_DEFAULT, LCMAP_UPPERCASE | LCMAP_LINGUISTIC_CASING, srcW.c_str(), static_cast<int>(srcW.length()),
--            dstW.data(), static_cast<int>(dstW.length()), nullptr, nullptr, 0);
-+            dstW.data(), static_cast<int>(dstW.length()), nullptr, nullptr, 0);*/
-+        auto result = LCMapStringW(
-+            LOCALE_USER_DEFAULT, LCMAP_UPPERCASE | LCMAP_LINGUISTIC_CASING, srcW.c_str(), static_cast<int>(srcW.length()),
-+            dstW.data(), static_cast<int>(dstW.length()));
-         if (result == 0)
-         {
-             // Check the error
-@@ -655,7 +661,6 @@ namespace String
+@@ -655,7 +655,6 @@ namespace String
              LOG_WARNING("LCMapStringEx failed with %d", error);
              return std::string(src);
          }
@@ -370,119 +298,19 @@ index 29fc1bb..993509c 100644
          return result;
      }
 diff --git a/src/openrct2/platform/Platform.Win32.cpp b/src/openrct2/platform/Platform.Win32.cpp
-index 96c3c56..62a7c3f 100644
+index 96c3c56..1acd3aa 100644
 --- a/src/openrct2/platform/Platform.Win32.cpp
 +++ b/src/openrct2/platform/Platform.Win32.cpp
-@@ -19,6 +19,7 @@
- #    include <lmcons.h>
- #    include <memory>
- #    include <shlobj.h>
-+#    include <shlwapi.h>
- #    undef GetEnvironmentVariable
- 
- #    include "../Date.h"
-@@ -47,6 +48,9 @@ static constexpr wchar_t SINGLE_INSTANCE_MUTEX_NAME[] = L"RollerCoaster Tycoon 2
+@@ -47,6 +47,8 @@ static constexpr wchar_t SINGLE_INSTANCE_MUTEX_NAME[] = L"RollerCoaster Tycoon 2
  #    define SOFTWARE_CLASSES L"Software\\Classes"
  #    define MUI_CACHE L"Local Settings\\Software\\Microsoft\\Windows\\Shell\\MuiCache"
  
-+//#define swprintf_s swprintf
-+//#define swscanf_s swscanf
++#define swprintf_s swprintf
 +
  namespace Platform
  {
      static std::string WIN32_GetKnownFolderPath(REFKNOWNFOLDERID rfid);
-@@ -179,8 +183,10 @@ namespace Platform
-         std::string result;
- 
-         wchar_t date[20];
--        ptrdiff_t charsWritten = GetDateFormatEx(
--            LOCALE_NAME_USER_DEFAULT, DATE_SHORTDATE, &st, nullptr, date, static_cast<int>(std::size(date)), nullptr);
-+        //ptrdiff_t charsWritten = GetDateFormatEx(
-+        //    LOCALE_NAME_USER_DEFAULT, DATE_SHORTDATE, &st, nullptr, date, static_cast<int>(std::size(date)), nullptr);
-+        ptrdiff_t charsWritten = GetDateFormatW(
-+			LOCALE_USER_DEFAULT, DATE_SHORTDATE, &st, nullptr, date, static_cast<int>(std::size(date)));
-         if (charsWritten != 0)
-         {
-             result = String::ToUtf8(std::wstring_view(date, charsWritten - 1));
-@@ -194,8 +200,10 @@ namespace Platform
-         std::string result;
- 
-         wchar_t time[20];
--        ptrdiff_t charsWritten = GetTimeFormatEx(
--            LOCALE_NAME_USER_DEFAULT, 0, &st, nullptr, time, static_cast<int>(std::size(time)));
-+        //ptrdiff_t charsWritten = GetTimeFormatEx(
-+        //    LOCALE_NAME_USER_DEFAULT, 0, &st, nullptr, time, static_cast<int>(std::size(time)));
-+        ptrdiff_t charsWritten = GetTimeFormatW(
-+			LOCALE_USER_DEFAULT, 0, &st, nullptr, time, static_cast<int>(std::size(time)));
-         if (charsWritten != 0)
-         {
-             result = String::ToUtf8(std::wstring_view(time, charsWritten - 1));
-@@ -294,12 +302,17 @@ namespace Platform
-     static std::string WIN32_GetKnownFolderPath(REFKNOWNFOLDERID rfid)
-     {
-         std::string path;
--        wchar_t* wpath = nullptr;
--        if (SUCCEEDED(SHGetKnownFolderPath(rfid, KF_FLAG_CREATE, nullptr, &wpath)))
-+        wchar_t wpath[MAX_PATH];
-+        int csidl;
-+        if      (rfid == FOLDERID_Documents)    csidl = CSIDL_MYDOCUMENTS;
-+        else if (rfid == FOLDERID_Fonts)        csidl = CSIDL_FONTS;
-+        else if (rfid == FOLDERID_LocalAppData) csidl = CSIDL_LOCAL_APPDATA;
-+        else if (rfid == FOLDERID_Profile)      csidl = CSIDL_PROFILE;
-+        else                                    csidl = -1;
-+        if (SUCCEEDED(SHGetFolderPathW(nullptr, csidl, nullptr, SHGFP_TYPE_CURRENT, wpath)))
-         {
-             path = String::ToUtf8(wpath);
-         }
--        CoTaskMemFree(wpath);
-         return path;
-     }
- 
-@@ -407,7 +420,8 @@ namespace Platform
-         }
-         // [hRootKey\OpenRCT2.ext\DefaultIcon]
-         wchar_t szIconW[MAX_PATH];
--        printResult = swprintf_s(szIconW, MAX_PATH, L"\"%s\",%d", dllPathW, iconIndex);
-+        //printResult = swprintf_s(szIconW, MAX_PATH, L"\"%s\",%d", dllPathW, iconIndex);
-+        printResult = swprintf(szIconW, MAX_PATH, L"\"%s\",%d", dllPathW, iconIndex);
-         assert(printResult >= 0);
-         if (RegSetValueW(hKey, L"DefaultIcon", REG_SZ, szIconW, 0) != ERROR_SUCCESS)
-         {
-@@ -434,7 +448,8 @@ namespace Platform
- 
-         // [hRootKey\OpenRCT2.sv6\shell\open\command]
-         wchar_t szCommandW[MAX_PATH];
--        printResult = swprintf_s(szCommandW, MAX_PATH, L"\"%s\" %s", exePathW, commandArgsW.c_str());
-+        //printResult = swprintf_s(szCommandW, MAX_PATH, L"\"%s\" %s", exePathW, commandArgsW.c_str());
-+        printResult = swprintf(szCommandW, MAX_PATH, L"\"%s\" %s", exePathW, commandArgsW.c_str());
-         assert(printResult >= 0);
-         if (RegSetValueW(hKey, L"shell\\open\\command", REG_SZ, szCommandW, 0) != ERROR_SUCCESS)
-         {
-@@ -452,11 +467,11 @@ namespace Platform
-         if (RegOpenKeyW(HKEY_CURRENT_USER, SOFTWARE_CLASSES, &hRootKey) == ERROR_SUCCESS)
-         {
-             // [hRootKey\.ext]
--            RegDeleteTreeW(hRootKey, String::ToWideChar(extension).c_str());
-+            SHDeleteKeyW(hRootKey, String::ToWideChar(extension).c_str());
- 
-             // [hRootKey\OpenRCT2.ext]
-             auto progIdName = GetProdIDName(extension);
--            RegDeleteTreeW(hRootKey, progIdName.c_str());
-+            SHDeleteKeyW(hRootKey, progIdName.c_str());
- 
-             RegCloseKey(hRootKey);
-         }
-@@ -573,7 +588,8 @@ namespace Platform
-     uint16_t GetLocaleLanguage()
-     {
-         wchar_t langCode[LOCALE_NAME_MAX_LENGTH];
--        if (GetLocaleInfoEx(LOCALE_NAME_USER_DEFAULT, LOCALE_SNAME, langCode, static_cast<int>(std::size(langCode))) == 0)
-+        //if (GetLocaleInfoEx(LOCALE_NAME_USER_DEFAULT, LOCALE_SNAME, langCode, static_cast<int>(std::size(langCode))) == 0)
-+        if (GetLocaleInfoW(LOCALE_USER_DEFAULT, LOCALE_SNAME, langCode, static_cast<int>(std::size(langCode))) == 0)
-         {
-             return LANGUAGE_UNDEFINED;
-         }
-@@ -608,7 +624,6 @@ namespace Platform
+@@ -608,7 +610,6 @@ namespace Platform
          };
          static_assert(
              std::size(supportedLocales) == LANGUAGE_COUNT - 1, "GetLocaleLanguage: List of languages does not match the enum!");
@@ -490,121 +318,164 @@ index 96c3c56..62a7c3f 100644
          for (const auto& locale : supportedLocales)
          {
              if (wcsncmp(langCode, locale.first.data(), locale.first.length()) == 0)
-@@ -622,7 +637,8 @@ namespace Platform
-     CurrencyType GetLocaleCurrency()
-     {
-         wchar_t currCode[9];
--        if (GetLocaleInfoEx(LOCALE_NAME_USER_DEFAULT, LOCALE_SINTLSYMBOL, currCode, static_cast<int>(std::size(currCode))) == 0)
-+        //if (GetLocaleInfoEx(LOCALE_NAME_USER_DEFAULT, LOCALE_SINTLSYMBOL, currCode, static_cast<int>(std::size(currCode))) == 0)
-+        if (GetLocaleInfoW(LOCALE_USER_DEFAULT, LOCALE_SINTLSYMBOL, currCode, static_cast<int>(std::size(currCode))) == 0)
-         {
-             return Platform::GetCurrencyValue(nullptr);
-         }
-@@ -633,10 +649,15 @@ namespace Platform
-     MeasurementFormat GetLocaleMeasurementFormat()
-     {
-         UINT measurement_system;
--        if (GetLocaleInfoEx(
-+        /*if (GetLocaleInfoEx(
-                 LOCALE_NAME_USER_DEFAULT, LOCALE_IMEASURE | LOCALE_RETURN_NUMBER, reinterpret_cast<LPWSTR>(&measurement_system),
-                 sizeof(measurement_system) / sizeof(wchar_t))
-             == 0)
-+        */
-+        if (GetLocaleInfoW(
-+                LOCALE_USER_DEFAULT, LOCALE_IMEASURE | LOCALE_RETURN_NUMBER, reinterpret_cast<LPWSTR>(&measurement_system),
-+                sizeof(measurement_system) / sizeof(wchar_t))
-+            == 0)
-         {
-             return MeasurementFormat::Metric;
-         }
-@@ -646,14 +667,20 @@ namespace Platform
- 
-     uint8_t GetLocaleDateFormat()
-     {
-+		// TODO
-+		return DATE_FORMAT_DAY_MONTH_YEAR;
-         // Retrieve short date format, eg "MM/dd/yyyy"
-         wchar_t dateFormat[80];
--        if (GetLocaleInfoEx(LOCALE_NAME_USER_DEFAULT, LOCALE_SSHORTDATE, dateFormat, static_cast<int>(std::size(dateFormat)))
-+        /*if (GetLocaleInfoEx(LOCALE_NAME_USER_DEFAULT, LOCALE_SSHORTDATE, dateFormat, static_cast<int>(std::size(dateFormat)))
-+            == 0)*/
-+        if (GetLocaleInfoW(LOCALE_USER_DEFAULT, LOCALE_SSHORTDATE, dateFormat, static_cast<int>(std::size(dateFormat)))
-             == 0)
-         {
-             return DATE_FORMAT_DAY_MONTH_YEAR;
-         }
- 
-+		wprintf(L"date format: '%s'\n", dateFormat);
-+
-         // The only valid characters for format types are: dgyM
-         // We try to find 3 strings of format types, ignore any characters in between.
-         // We also ignore 'g', as it represents 'era' and we don't have that concept
-@@ -662,20 +689,24 @@ namespace Platform
+@@ -662,10 +663,14 @@ namespace Platform
          //
          wchar_t first[std::size(dateFormat)];
          wchar_t second[std::size(dateFormat)];
--        if (swscanf_s(
-+        /*if (swscanf_s(
++#if 0
+         if (swscanf_s(
                  dateFormat, L"%l[dyM]%*l[^dyM]%l[dyM]%*l[^dyM]%*l[dyM]", first, static_cast<uint32_t>(std::size(first)), second,
                  static_cast<uint32_t>(std::size(second)))
--            != 2)
-+            != 2)*/
+             != 2)
++#else
 +        if (swscanf(dateFormat, L"%l[dyM]%*l[^dyM]%l[dyM]%*l[^dyM]%*l[dyM]", first, second) != 2)
++#endif
          {
-+			LOG_VERBOSE("GetLocaleDateFormat dmy1");
              return DATE_FORMAT_DAY_MONTH_YEAR;
          }
- 
-         if (first[0] == L'd')
-         {
-+			LOG_VERBOSE("GetLocaleDateFormat dmy2");
-             return DATE_FORMAT_DAY_MONTH_YEAR;
-         }
-         if (first[0] == L'M')
-         {
-+			LOG_VERBOSE("GetLocaleDateFormat mdy");
-             return DATE_FORMAT_MONTH_DAY_YEAR;
-         }
-         if (first[0] == L'y')
-@@ -688,7 +719,7 @@ namespace Platform
-             // Closest possible option
-             return DATE_FORMAT_YEAR_MONTH_DAY;
-         }
--
-+		LOG_VERBOSE("GetLocaleDateFormat fallback");
-         // Default fallback
-         return DATE_FORMAT_DAY_MONTH_YEAR;
-     }
-@@ -699,9 +730,13 @@ namespace Platform
- 
-         // GetLocaleInfoEx will set fahrenheit to 1 if the locale on this computer
-         // uses the United States measurement system or 0 otherwise.
--        if (GetLocaleInfoEx(
-+        /*if (GetLocaleInfoEx(
-                 LOCALE_NAME_USER_DEFAULT, LOCALE_IMEASURE | LOCALE_RETURN_NUMBER, reinterpret_cast<LPWSTR>(&fahrenheit),
-                 sizeof(fahrenheit) / sizeof(wchar_t))
-+            == 0)*/
-+        if (GetLocaleInfoW(
-+                LOCALE_USER_DEFAULT, LOCALE_IMEASURE | LOCALE_RETURN_NUMBER, reinterpret_cast<LPWSTR>(&fahrenheit),
-+                sizeof(fahrenheit) / sizeof(wchar_t))
-             == 0)
-         {
-             // Assume celsius by default if function call fails
-@@ -837,7 +872,7 @@ namespace Platform
-     bool SetupUriProtocol()
-     {
-         LOG_VERBOSE("Setting up URI protocol...");
--
-+/*
-         // [HKEY_CURRENT_USER\Software\Classes]
-         HKEY hRootKey;
-         if (RegOpenKeyW(HKEY_CURRENT_USER, SOFTWARE_CLASSES, &hRootKey) == ERROR_SUCCESS)
-@@ -877,7 +912,7 @@ namespace Platform
-                 }
-             }
-         }
--
-+*/
-         LOG_VERBOSE("URI protocol setup failed");
-         return false;
-     }
+diff --git a/src/openrct2/platform/nt51shim.cpp b/src/openrct2/platform/nt51shim.cpp
+new file mode 100644
+index 0000000..732aa7c
+--- /dev/null
++++ b/src/openrct2/platform/nt51shim.cpp
+@@ -0,0 +1,140 @@
++// API shims for Windows XP compatibility
++#include <windows.h>
++#include <shlobj.h>
++#include <shlwapi.h>
++
++#include <stdio.h>
++#include <string.h>
++
++extern "C" {
++
++// Creates a fake import (basically a function pointer) for the function to override the DLL import with our own implementation
++#define DLL_OVERRIDE(name, argbytes) typeof(name) *name##_ptr asm("__imp__"#name"@"#argbytes) = name;
++
++static LCID locale_name_to_id(LPCWSTR lpLocaleName)
++{
++    if (lpLocaleName == LOCALE_NAME_USER_DEFAULT)  // LOCALE_NAME_USER_DEFAULT is equal to NULL
++        return LOCALE_USER_DEFAULT;
++    else if (wcscmp(lpLocaleName, LOCALE_NAME_INVARIANT) == 0)
++        return LOCALE_INVARIANT;
++    else if (wcscmp(lpLocaleName, LOCALE_NAME_SYSTEM_DEFAULT) == 0)
++        return LOCALE_SYSTEM_DEFAULT;
++    return 0xFFFFFFFF;  // something invalid
++}
++
++int WINAPI GetDateFormatEx(
++  LPCWSTR          lpLocaleName,
++  DWORD            dwFlags,
++  const SYSTEMTIME *lpDate,
++  LPCWSTR          lpFormat,
++  LPWSTR           lpDateStr,
++  int              cchDate,
++  LPCWSTR          lpCalendar)
++{
++    wprintf(L"shim: GetDateFormatEx(\"%s\", %u, %p, \"%s\", %p, %i, \"%s\")\n", lpLocaleName, dwFlags, lpDate, lpFormat, lpDateStr, cchDate, lpCalendar);
++    return GetDateFormatW(locale_name_to_id(lpLocaleName), dwFlags, lpDate, lpFormat, lpDateStr, cchDate);
++}
++
++DLL_OVERRIDE(GetDateFormatEx,28)
++
++int WINAPI GetTimeFormatEx(
++  LPCWSTR          lpLocaleName,
++  DWORD            dwFlags,
++  const SYSTEMTIME *lpTime,
++  LPCWSTR          lpFormat,
++  LPWSTR           lpTimeStr,
++  int              cchTime)
++{
++    wprintf(L"shim: GetTimeFormatEx(\"%s\", %u, %p, \"%s\", %p, %i)\n", lpLocaleName, dwFlags, lpTime, lpFormat, lpTimeStr, cchTime);
++    return GetTimeFormatW(locale_name_to_id(lpLocaleName), dwFlags, lpTime, lpFormat, lpTimeStr, cchTime);
++}
++
++DLL_OVERRIDE(GetTimeFormatEx,24)
++
++int WINAPI GetLocaleInfoEx(
++  LPCWSTR lpLocaleName,
++  LCTYPE  LCType,
++  LPWSTR  lpLCData,
++  int     cchData)
++{
++    wprintf(L"shim: GetLocaleInfoEx(\"%s\", %u, %p, %i)\n", lpLocaleName, LCType, lpLCData, cchData);
++    return GetLocaleInfoW(locale_name_to_id(lpLocaleName), LCType, lpLCData, cchData);
++}
++
++DLL_OVERRIDE(GetLocaleInfoEx,16)
++
++int WINAPI LCMapStringEx(
++  LPCWSTR          lpLocaleName,
++  DWORD            dwMapFlags,
++  LPCWSTR          lpSrcStr,
++  int              cchSrc,
++  LPWSTR           lpDestStr,
++  int              cchDest,
++  LPNLSVERSIONINFO lpVersionInformation,
++  LPVOID           lpReserved,
++  LPARAM           sortHandle)
++{
++    wprintf(L"shim: LCMapStringEx(\"%s\", %u, \"%s\", %i, %p, %i)\n", lpLocaleName, dwMapFlags, lpSrcStr, cchSrc, lpDestStr, cchDest);
++    return LCMapStringW(locale_name_to_id(lpLocaleName), dwMapFlags, lpSrcStr, cchSrc, lpDestStr, cchDest);
++}
++
++DLL_OVERRIDE(LCMapStringEx,36)
++
++LSTATUS WINAPI RegDeleteTreeW(
++  HKEY    hKey,
++  LPCWSTR lpSubKey)
++{
++    wprintf(L"shim: RegDeleteTreeW(0x%X, \"%s\")\n", hKey, lpSubKey);
++    // Note: SHDeleteKey will also remove the key itself, while RegDeleteTree just removes its contents.
++    return SHDeleteKeyW(hKey, lpSubKey);
++}
++
++DLL_OVERRIDE(RegDeleteTreeW,8)
++
++LSTATUS WINAPI RegSetKeyValueW(
++  HKEY    hKey,
++  LPCWSTR lpSubKey,
++  LPCWSTR lpValueName,
++  DWORD   dwType,
++  LPCVOID lpData,
++  DWORD   cbData
++)
++{
++	wprintf(L"shim (unimplemented): RegSetKeyValueW(0x%x, \"%s\", \"%s\", %u, %p, %u)\n", hKey, lpSubKey, lpValueName, dwType, lpData, cbData);
++	// TODO: implement
++	return ERROR_CALL_NOT_IMPLEMENTED;
++}
++
++DLL_OVERRIDE(RegSetKeyValueW,24)
++
++HRESULT WINAPI SHGetKnownFolderPath(
++  REFKNOWNFOLDERID rfid,
++  DWORD            dwFlags,
++  HANDLE           hToken,
++  PWSTR            *ppszPath)
++{
++    wprintf(L"shim: SHGetKnownFolderPath(%p, %u, %p, %p)\n", rfid, dwFlags, hToken, ppszPath);
++    int csidl = -1;
++    if (rfid == FOLDERID_Documents)         csidl = CSIDL_MYDOCUMENTS;
++    else if (rfid == FOLDERID_Fonts)        csidl = CSIDL_FONTS;
++    else if (rfid == FOLDERID_LocalAppData) csidl = CSIDL_LOCAL_APPDATA;
++    else if (rfid == FOLDERID_Profile)      csidl = CSIDL_PROFILE;
++    *ppszPath = (PWSTR)CoTaskMemAlloc(MAX_PATH * sizeof(WCHAR));
++    return SHGetFolderPathW(NULL, csidl, hToken, SHGFP_TYPE_CURRENT, *ppszPath);
++}
++
++DLL_OVERRIDE(SHGetKnownFolderPath,16)
++
++BOOL WINAPI CancelIoEx(
++  HANDLE       hFile,
++  LPOVERLAPPED lpOverlapped)
++{
++    printf("shim: CancelIoEx(%p, %p)\n", hFile, lpOverlapped);
++    // TODO: CancelIo does not work on handles created on a different thread!
++    // Not sure if that functionality is needed.
++    return CancelIo(hFile);
++}
++
++DLL_OVERRIDE(CancelIoEx,8)
++
++}
