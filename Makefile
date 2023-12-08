@@ -107,9 +107,9 @@ ZLIB_VERSION := 1.3
 ZLIB_DIR     := zlib-$(ZLIB_VERSION)
 ZLIB_ARCHIVE := $(ZLIB_DIR).tar.gz
 
-CMAKE_CONFIGURE = mkdir -p $(@D)/_build && cd $(@D)/_build && cmake .. -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTING=OFF -DCMAKE_TOOLCHAIN_FILE=$(MAKE_DIR)/mingw32.cmake -DCMAKE_INSTALL_PREFIX=$(PREFIX_DIR) -DCMAKE_PREFIX_PATH=$(PREFIX_DIR) -DCMAKE_FIND_ROOT_PATH="/usr/i686-w64-mingw32;$(PREFIX_DIR)"
+CMAKE_CONFIGURE = mkdir -p $(@D)/_build && cd $(@D)/_build && cmake .. -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTING=OFF -DCMAKE_TOOLCHAIN_FILE=$(MAKE_DIR)/mingw32.cmake -DCMAKE_INSTALL_PREFIX=$(PREFIX_DIR) -DCMAKE_PREFIX_PATH=$(PREFIX_DIR) -DCMAKE_FIND_ROOT_PATH="/usr/i686-w64-mingw32;$(PREFIX_DIR)" -DCOMPILE_FLAGS="-march=i686"
 
-AUTOTOOLS_CONFIGURE = mkdir -p $(@D)/_build && cd $(@D)/_build && ../configure --host=i686-w64-mingw32 --prefix=$(PREFIX_DIR) CFLAGS="-I$(PREFIX_DIR)/include" LDFLAGS="-L$(PREFIX_DIR)/lib"
+AUTOTOOLS_CONFIGURE = mkdir -p $(@D)/_build && cd $(@D)/_build && ../configure --host=i686-w64-mingw32 --prefix=$(PREFIX_DIR) CFLAGS="-march=i686 -I$(PREFIX_DIR)/include" LDFLAGS="-L$(PREFIX_DIR)/lib"
 
 .PHONY: all
 all: $(OPENRCT2_DIR)/built
@@ -147,7 +147,7 @@ $(OPENRCT2_DIR)/extracted:
 	touch $@
 
 $(OPENRCT2_DIR)/configured: $(OPENRCT2_DIR)/extracted $(CURL_DIR)/installed $(FLAC_DIR)/installed $(FREETYPE_DIR)/installed $(LIBICONV_DIR)/installed $(LIBPNG_DIR)/installed $(LIBOGG_DIR)/installed $(LIBVORBIS_DIR)/installed $(LIBZIP_DIR)/installed $(MBEDTLS_DIR)/installed $(NLOHMANNJSON_DIR)/installed $(OPENSSL_DIR)/installed $(SDL2_DIR)/installed $(SPEEXDSP_DIR)/installed $(WINPTHREAD_DIR)/installed $(ZLIB_DIR)/installed i686-w64-mingw32-pkg-config
-	mkdir -p $(@D)/_build && cd $(@D)/_build && cmake .. -DCMAKE_TOOLCHAIN_FILE=../CMakeLists_mingw.txt -DCMAKE_BUILD_TYPE=$(CMAKE_BUILD_TYPE) -DCMAKE_INSTALL_PREFIX="$(PREFIX_DIR)" -DCMAKE_PREFIX_PATH="$(PREFIX_DIR)" -DCMAKE_CXX_FLAGS="-I$(PREFIX_DIR)/include -I$(PREFIX_DIR)/include/SDL2 -fpermissive $(if $(STATIC),-DCURL_STATICLIB,) -DFLAC__NO_DLL" -DDISABLE_DISCORD_RPC=ON -DDOWNLOAD_OPENMSX=OFF -DDOWNLOAD_OPENSFX=OFF -DCMAKE_EXE_LINKER_FLAGS="-L$(PREFIX_DIR)/lib" -DPKG_CONFIG_EXECUTABLE="$(TOPDIR)/i686-w64-mingw32-pkg-config" -DSTATIC=$(if $(STATIC),ON,OFF) -DPORTABLE=ON --debug-find -DCMAKE_LIBRARY_PATH="$(PREFIX_DIR)" -DCMAKE_INCLUDE_PATH="$(PREFIX_DIR)" -DCMAKE_FIND_USE_CMAKE_SYSTEM_PATH=FALSE -DCMAKE_BUILD_TYPE=$(CMAKE_BUILD_TYPE)
+	mkdir -p $(@D)/_build && cd $(@D)/_build && cmake .. -DCMAKE_TOOLCHAIN_FILE=../CMakeLists_mingw.txt -DCMAKE_BUILD_TYPE=$(CMAKE_BUILD_TYPE) -DCMAKE_INSTALL_PREFIX="$(PREFIX_DIR)" -DCMAKE_PREFIX_PATH="$(PREFIX_DIR)" -DCMAKE_CXX_FLAGS="-march=i686 -I$(PREFIX_DIR)/include -I$(PREFIX_DIR)/include/SDL2 -fpermissive $(if $(STATIC),-DCURL_STATICLIB,) -DFLAC__NO_DLL" -DDISABLE_DISCORD_RPC=ON -DDOWNLOAD_OPENMSX=OFF -DDOWNLOAD_OPENSFX=OFF -DCMAKE_EXE_LINKER_FLAGS="-L$(PREFIX_DIR)/lib" -DPKG_CONFIG_EXECUTABLE="$(TOPDIR)/i686-w64-mingw32-pkg-config" -DSTATIC=$(if $(STATIC),ON,OFF) -DPORTABLE=ON -DCMAKE_LIBRARY_PATH="$(PREFIX_DIR)" -DCMAKE_INCLUDE_PATH="$(PREFIX_DIR)" -DCMAKE_FIND_USE_CMAKE_SYSTEM_PATH=FALSE -DCMAKE_BUILD_TYPE=$(CMAKE_BUILD_TYPE)
 	touch $@
 
 $(OPENRCT2_DIR)/built: $(OPENRCT2_DIR)/configured
@@ -302,7 +302,7 @@ $(OPENSSL_ARCHIVE):
 	wget https://www.openssl.org/source/$@
 
 $(OPENSSL_DIR)/configured: $(OPENSSL_DIR)/extracted
-	mkdir -p $(@D)/_build && cd $(@D)/_build && ../Configure mingw --prefix="$(PREFIX_DIR)" --cross-compile-prefix=i686-w64-mingw32- no-tests no-docs no-dso no-module $(if $(STATIC),no-shared,) -D_WIN32_WINNT=0x501
+	mkdir -p $(@D)/_build && cd $(@D)/_build && CFLAGS="-march=i686" ../Configure mingw --prefix="$(PREFIX_DIR)" --cross-compile-prefix=i686-w64-mingw32- no-tests no-docs no-dso no-module $(if $(STATIC),no-shared,) 386 -D_WIN32_WINNT=0x501
 	touch $@
 
 # p11-kit
@@ -328,7 +328,7 @@ $(SDL2_ARCHIVE):
 	wget https://github.com/libsdl-org/SDL/archive/refs/tags/release-$(SDL2_VERSION).tar.gz -O $@
 
 $(SDL2_DIR)/configured: $(SDL2_DIR)/extracted
-	$(CMAKE_CONFIGURE) $(if $(STATIC),-DSDL_SHARED=OFF,)
+	$(CMAKE_CONFIGURE) $(if $(STATIC),-DSDL_SHARED=OFF,) -DSDL_SSE=OFF -DSDL_SSE2=OFF -DSDL_SSE3=OFF -DSDL_SSEMATH=OFF
 	touch $@
 
 # Speex DSP
