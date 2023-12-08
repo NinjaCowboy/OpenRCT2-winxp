@@ -4,14 +4,17 @@ build/
 *.tar.xz
 *.zip
 curl-*/
+flac-*/
 freetype-*/
 gmp-*
 i686-w64-mingw32-pkg-config
 json/
 libiconv-*/
+libogg-*/
 libpng-*/
 libtasn1-*/
 libunistring-*/
+libvorbis-*/
 libzip-*/
 mbedtls-*/
 mingw-w64-*/
