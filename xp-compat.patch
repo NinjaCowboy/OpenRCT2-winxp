@@ -255,18 +255,6 @@ index ec57f1c..7d3a99e 100644
          curl_easy_setopt(curl, CURLOPT_URL, req.url.c_str());
          curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, true);
          curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, WriteData);
-diff --git a/src/openrct2/core/String.cpp b/src/openrct2/core/String.cpp
-index 3215149..2fb9306 100644
---- a/src/openrct2/core/String.cpp
-+++ b/src/openrct2/core/String.cpp
-@@ -655,7 +655,6 @@ namespace String
-             LOG_WARNING("LCMapStringEx failed with %d", error);
-             return std::string(src);
-         }
--
-         return String::ToUtf8(dstW);
- #else
-         icu::UnicodeString str = icu::UnicodeString::fromUTF8(std::string(src));
 diff --git a/src/openrct2/network/Socket.cpp b/src/openrct2/network/Socket.cpp
 index 29fc1bb..993509c 100644
 --- a/src/openrct2/network/Socket.cpp
@@ -310,14 +298,6 @@ index 96c3c56..1acd3aa 100644
  namespace Platform
  {
      static std::string WIN32_GetKnownFolderPath(REFKNOWNFOLDERID rfid);
-@@ -608,7 +610,6 @@ namespace Platform
-         };
-         static_assert(
-             std::size(supportedLocales) == LANGUAGE_COUNT - 1, "GetLocaleLanguage: List of languages does not match the enum!");
--
-         for (const auto& locale : supportedLocales)
-         {
-             if (wcsncmp(langCode, locale.first.data(), locale.first.length()) == 0)
 @@ -662,10 +663,14 @@ namespace Platform
          //
          wchar_t first[std::size(dateFormat)];
