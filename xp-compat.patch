@@ -121,30 +121,6 @@ index 90156d9..aa5b873 100644
              return resultFilename;
          }
  
-diff --git a/src/openrct2-ui/audio/AudioMixer.cpp b/src/openrct2-ui/audio/AudioMixer.cpp
-index 950a904..6d6ff26 100644
---- a/src/openrct2-ui/audio/AudioMixer.cpp
-+++ b/src/openrct2-ui/audio/AudioMixer.cpp
-@@ -11,6 +11,7 @@
- 
- #include <algorithm>
- #include <iterator>
-+#include <cmath>
- #include <openrct2/OpenRCT2.h>
- #include <openrct2/config/Config.h>
- #include <speex/speex_resampler.h>
-diff --git a/src/openrct2-ui/drawing/engines/opengl/TextureCache.h b/src/openrct2-ui/drawing/engines/opengl/TextureCache.h
-index a16a03b..12ce0fd 100644
---- a/src/openrct2-ui/drawing/engines/opengl/TextureCache.h
-+++ b/src/openrct2-ui/drawing/engines/opengl/TextureCache.h
-@@ -15,6 +15,7 @@
- #include <SDL_pixels.h>
- #include <algorithm>
- #include <array>
-+#include <cmath>
- #include <mutex>
- #include <openrct2/common.h>
- #include <openrct2/drawing/Drawing.h>
 diff --git a/src/openrct2/CMakeLists.txt b/src/openrct2/CMakeLists.txt
 index 367939c..6f798db 100644
 --- a/src/openrct2/CMakeLists.txt
