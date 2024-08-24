@@ -61,15 +61,16 @@ diff --git a/src/openrct2-ui/UiContext.Win32.cpp b/src/openrct2-ui/UiContext.Win
 index 90156d9..aa5b873 100644
 --- a/src/openrct2-ui/UiContext.Win32.cpp
 +++ b/src/openrct2-ui/UiContext.Win32.cpp
-@@ -13,6 +13,7 @@
+@@ -13,6 +13,8 @@
  // clang-format off
  #    include <windows.h>
  #    include <shellapi.h>
 +#    include <shlobj.h>
++#    include <commdlg.h>
  // clang-format on
  #    undef CreateWindow
  
-@@ -126,6 +127,43 @@ namespace OpenRCT2::Ui
+@@ -126,6 +128,43 @@ namespace OpenRCT2::Ui
          std::string ShowFileDialogInternal(SDL_Window* window, const FileDialogDesc& desc, bool isFolder)
          {
              std::string resultFilename;
@@ -217,8 +218,8 @@ index ec57f1c..7d3a99e 100644
   * OpenRCT2 is licensed under the GNU General Public License version 3.
   *****************************************************************************/
  
--#if !defined(DISABLE_HTTP) && !defined(_WIN32)
-+#if !defined(DISABLE_HTTP) /*&& !defined(_WIN32)*/
+-#if !defined(DISABLE_HTTP) && !defined(_WIN32) && !defined(__ANDROID__)
++#if !defined(DISABLE_HTTP) /*&& !defined(_WIN32)*/ && !defined(__ANDROID__)
  
  #    include "Http.h"
  
@@ -271,7 +272,7 @@ index 96c3c56..1acd3aa 100644
  
 +#define swprintf_s swprintf
 +
- namespace Platform
+ namespace OpenRCT2::Platform
  {
      static std::string WIN32_GetKnownFolderPath(REFKNOWNFOLDERID rfid);
 @@ -662,10 +663,14 @@ namespace Platform

@@ -1,4 +1,4 @@
-This repository contains a Makefile and source code patch to build OpenRCT2 (v0.4.6 at the time of writing) for Windows XP, as well as precompiled binaries in the [Releases](https://github.com/NinjaCowboy/OpenRCT2-winxp/releases/) section.
+This repository contains a Makefile and source code patch to build OpenRCT2 (v0.4.13 at the time of writing) for Windows XP, as well as precompiled binaries in the [Releases](https://github.com/NinjaCowboy/OpenRCT2-winxp/releases/) section.
 
 # Instructions
 

@@ -142,7 +142,7 @@ distclean: clean
 	$(RM) $(CURL_ARCHIVE) $(FLAC_ARCHIVE) $(FREETYPE_ARCHIVE) $(GMP_ARCHIVE) $(LIBICONV_ARCHIVE) $(LIBOGG_ARCHIVE) $(LIBPNG_ARCHIVE) $(LIBTASN1_ARCHIVE) $(LIBUNISTRING_ARCHIVE) $(LIBVORBIS_ARCHIVE) $(LIBZIP_ARCHIVE) $(MBEDTLS_ARCHIVE) $(NETTLE_ARCHIVE) $(NLOHMANNJSON_ARCHIVE) $(OPENSSL_ARCHIVE) $(P11KIT_ARCHIVE) $(SDL2_ARCHIVE) $(SPEEXDSP_ARCHIVE) $(WINPTHREAD_ARCHIVE) $(ZLIB_ARCHIVE)
 
 $(OPENRCT2_DIR)/extracted:
-	git clone --depth 1 --branch v0.4.6 https://github.com/OpenRCT2/OpenRCT2
+	git clone --depth 1 --branch v0.4.13 https://github.com/OpenRCT2/OpenRCT2
 	cd $(@D) && patch -f -p1 < $(MAKE_DIR)/xp-compat.patch
 	touch $@
 
