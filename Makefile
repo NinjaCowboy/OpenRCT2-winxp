@@ -250,7 +250,7 @@ $(LIBVORBIS_ARCHIVE):
 	wget https://downloads.xiph.org/releases/vorbis/$@
 
 $(LIBVORBIS_DIR)/configured: $(LIBVORBIS_DIR)/extracted $(LIBOGG_DIR)/installed
-	$(CMAKE_CONFIGURE)
+	$(CMAKE_CONFIGURE) -DCMAKE_POLICY_VERSION_MINIMUM=3.5
 	touch $@
 
 # libzip
