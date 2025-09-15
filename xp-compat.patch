@@ -58,18 +58,20 @@ index ac0809deb1..19d7e3dd13 100644
  endif ()
  
 diff --git a/src/openrct2-ui/UiContext.Win32.cpp b/src/openrct2-ui/UiContext.Win32.cpp
-index 45d2cf881c..6eee7c4f9a 100644
+index 45d2cf881c..936cb438f0 100644
 --- a/src/openrct2-ui/UiContext.Win32.cpp
 +++ b/src/openrct2-ui/UiContext.Win32.cpp
-@@ -16,6 +16,7 @@
+@@ -15,7 +15,9 @@
+         #define WIN32_LEAN_AND_MEAN
      #endif
      #include <windows.h>
++    #include <commdlg.h>
      #include <shellapi.h>
 +    #include <shlobj.h>
      #undef CreateWindow
  // clang-format on
  
-@@ -128,6 +129,43 @@ namespace OpenRCT2::Ui
+@@ -128,6 +130,43 @@ namespace OpenRCT2::Ui
          std::string ShowFileDialogInternal(SDL_Window* window, const FileDialogDesc& desc, bool isFolder)
          {
              std::string resultFilename;
@@ -78,7 +80,7 @@ index 45d2cf881c..6eee7c4f9a 100644
 +            if (isFolder)
 +            {
 +                BROWSEINFOW bi = {};
-+                std::wstring wtitle = String::ToWideChar(desc.Title);
++                std::wstring wtitle = String::toWideChar(desc.Title);
 +                bi.hwndOwner = nullptr;
 +                bi.pidlRoot = nullptr;
 +                bi.pszDisplayName = path;
@@ -92,7 +94,7 @@ index 45d2cf881c..6eee7c4f9a 100644
 +                if (list != NULL)
 +                {
 +                    SHGetPathFromIDListW(list, path);
-+                    resultFilename = String::ToUtf8(path);
++                    resultFilename = String::toUtf8(path);
 +                    MessageBoxW(NULL, path, NULL, MB_OK);
 +                }
 +            }
@@ -107,13 +109,13 @@ index 45d2cf881c..6eee7c4f9a 100644
 +                    GetSaveFileNameW(&ofn);
 +                else
 +                    GetOpenFileNameW(&ofn);
-+                resultFilename = String::ToUtf8(ofn.lpstrFile);
++                resultFilename = String::toUtf8(ofn.lpstrFile);
 +            }
 +#else
  
              CCoInitialize coInitialize(COINIT_APARTMENTTHREADED);
              if (coInitialize)
-@@ -193,6 +231,7 @@ namespace OpenRCT2::Ui
+@@ -193,6 +232,7 @@ namespace OpenRCT2::Ui
                      }
                  }
              }
