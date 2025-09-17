@@ -107,6 +107,10 @@ ZLIB_VERSION := 1.3
 ZLIB_DIR     := zlib-$(ZLIB_VERSION)
 ZLIB_ARCHIVE := $(ZLIB_DIR).tar.gz
 
+ZSTD_VERSION := 1.5.7
+ZSTD_DIR     := zstd-$(ZSTD_VERSION)
+ZSTD_ARCHIVE := $(ZSTD_DIR).tar.gz
+
 CMAKE_CONFIGURE = mkdir -p $(@D)/_build && cd $(@D)/_build && cmake .. -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTING=OFF -DCMAKE_TOOLCHAIN_FILE=$(MAKE_DIR)/mingw32.cmake -DCMAKE_INSTALL_PREFIX=$(PREFIX_DIR) -DCMAKE_PREFIX_PATH=$(PREFIX_DIR) -DCMAKE_FIND_ROOT_PATH="/usr/i686-w64-mingw32;$(PREFIX_DIR)" -DCOMPILE_FLAGS="-march=i686"
 
 AUTOTOOLS_CONFIGURE = mkdir -p $(@D)/_build && cd $(@D)/_build && ../configure --host=i686-w64-mingw32 --prefix=$(PREFIX_DIR) CFLAGS="-march=i686 -I$(PREFIX_DIR)/include" LDFLAGS="-L$(PREFIX_DIR)/lib"
@@ -146,7 +150,7 @@ $(OPENRCT2_DIR)/extracted:
 	cd $(@D) && patch -f -p1 < $(MAKE_DIR)/xp-compat.patch
 	touch $@
 
-$(OPENRCT2_DIR)/configured: $(OPENRCT2_DIR)/extracted $(CURL_DIR)/installed $(FLAC_DIR)/installed $(FREETYPE_DIR)/installed $(LIBICONV_DIR)/installed $(LIBPNG_DIR)/installed $(LIBOGG_DIR)/installed $(LIBVORBIS_DIR)/installed $(LIBZIP_DIR)/installed $(MBEDTLS_DIR)/installed $(NLOHMANNJSON_DIR)/installed $(OPENSSL_DIR)/installed $(SDL2_DIR)/installed $(SPEEXDSP_DIR)/installed $(WINPTHREAD_DIR)/installed $(ZLIB_DIR)/installed i686-w64-mingw32-pkg-config
+$(OPENRCT2_DIR)/configured: $(OPENRCT2_DIR)/extracted $(CURL_DIR)/installed $(FLAC_DIR)/installed $(FREETYPE_DIR)/installed $(LIBICONV_DIR)/installed $(LIBPNG_DIR)/installed $(LIBOGG_DIR)/installed $(LIBVORBIS_DIR)/installed $(LIBZIP_DIR)/installed $(MBEDTLS_DIR)/installed $(NLOHMANNJSON_DIR)/installed $(OPENSSL_DIR)/installed $(SDL2_DIR)/installed $(SPEEXDSP_DIR)/installed $(WINPTHREAD_DIR)/installed $(ZLIB_DIR)/installed $(ZSTD_DIR)/installed i686-w64-mingw32-pkg-config
 	mkdir -p $(@D)/_build && cd $(@D)/_build && cmake .. -DCMAKE_TOOLCHAIN_FILE=../CMakeLists_mingw.txt -DCMAKE_BUILD_TYPE=$(CMAKE_BUILD_TYPE) -DCMAKE_INSTALL_PREFIX="$(PREFIX_DIR)" -DCMAKE_PREFIX_PATH="$(PREFIX_DIR)" -DCMAKE_CXX_FLAGS="-march=i686 -I$(PREFIX_DIR)/include -I$(PREFIX_DIR)/include/SDL2 -fpermissive $(if $(STATIC),-DCURL_STATICLIB,) -DFLAC__NO_DLL" -DDISABLE_DISCORD_RPC=ON -DDOWNLOAD_OPENMSX=OFF -DDOWNLOAD_OPENSFX=OFF -DCMAKE_EXE_LINKER_FLAGS="-L$(PREFIX_DIR)/lib" -DPKG_CONFIG_EXECUTABLE="$(TOPDIR)/i686-w64-mingw32-pkg-config" -DSTATIC=$(if $(STATIC),ON,OFF) -DPORTABLE=ON -DCMAKE_LIBRARY_PATH="$(PREFIX_DIR)" -DCMAKE_INCLUDE_PATH="$(PREFIX_DIR)" -DCMAKE_FIND_USE_CMAKE_SYSTEM_PATH=FALSE -DCMAKE_BUILD_TYPE=$(CMAKE_BUILD_TYPE)
 	touch $@
 
@@ -246,7 +250,7 @@ $(LIBVORBIS_ARCHIVE):
 	wget https://downloads.xiph.org/releases/vorbis/$@
 
 $(LIBVORBIS_DIR)/configured: $(LIBVORBIS_DIR)/extracted $(LIBOGG_DIR)/installed
-	$(CMAKE_CONFIGURE)
+	$(CMAKE_CONFIGURE) -DCMAKE_POLICY_VERSION_MINIMUM=3.5
 	touch $@
 
 # libzip
@@ -361,6 +365,19 @@ $(ZLIB_DIR)/configured: $(ZLIB_DIR)/extracted
 $(ZLIB_DIR)/installed: $(ZLIB_DIR)/built
 	cd $(@D)/_build && make install
 	ln -rsf build/lib/libzlibstatic.a build/lib/libz.a
+	touch $@
+
+# Zstd
+
+$(ZSTD_ARCHIVE):
+	wget https://github.com/facebook/zstd/releases/download/v$(ZSTD_VERSION)/zstd-$(ZSTD_VERSION).tar.gz -O $@
+
+$(ZSTD_DIR)/configured: $(ZSTD_DIR)/extracted
+	mkdir -p $(@D)/_build && cd $(@D)/_build && cmake ../build/cmake -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTING=OFF -DCMAKE_TOOLCHAIN_FILE=$(MAKE_DIR)/mingw32.cmake -DCMAKE_INSTALL_PREFIX=$(PREFIX_DIR) -DCMAKE_PREFIX_PATH=$(PREFIX_DIR) -DCMAKE_FIND_ROOT_PATH="/usr/i686-w64-mingw32;$(PREFIX_DIR)" -DCOMPILE_FLAGS="-march=i686" -DZSTD_MULTITHREAD_SUPPORT=OFF
+	touch $@
+
+$(ZSTD_DIR)/installed: $(ZSTD_DIR)/built
+	cd $(@D)/_build && make install
 	touch $@
 
 # pkg-config

@@ -1,8 +1,8 @@
 diff --git a/CMakeLists.txt b/CMakeLists.txt
-index 2f7e5ac..fff51e7 100644
+index 0e8ffb0915..ab3bc6eca3 100644
 --- a/CMakeLists.txt
 +++ b/CMakeLists.txt
-@@ -327,7 +327,7 @@ else ()
+@@ -347,7 +347,7 @@ else ()
  
      # Compiler flags
      set(DEBUG_LEVEL 0 CACHE STRING "Select debug level for compilation. Use value in range 0–3.")
@@ -12,7 +12,7 @@ index 2f7e5ac..fff51e7 100644
      set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DDEBUG=${DEBUG_LEVEL}")
  
 diff --git a/CMakeLists_mingw.txt b/CMakeLists_mingw.txt
-index 830c503..65253a5 100644
+index 830c5031e4..65253a55fc 100644
 --- a/CMakeLists_mingw.txt
 +++ b/CMakeLists_mingw.txt
 @@ -15,7 +15,7 @@ else()
@@ -25,22 +25,22 @@ index 830c503..65253a5 100644
  # adjust the default behaviour of the FIND_XXX() commands:
  # search headers and libraries in the target environment, search
 diff --git a/src/openrct2-cli/CMakeLists.txt b/src/openrct2-cli/CMakeLists.txt
-index 7fb991e..3e97f56 100644
+index 19d41a6ff7..d74505d09f 100644
 --- a/src/openrct2-cli/CMakeLists.txt
 +++ b/src/openrct2-cli/CMakeLists.txt
-@@ -18,3 +18,7 @@ target_include_directories(${PROJECT_NAME} PRIVATE "${CMAKE_CURRENT_LIST_DIR}/..
- ipo_set_target_properties(${PROJECT_NAME})
- target_link_libraries(${PROJECT_NAME} libopenrct2 Threads::Threads)
- target_link_platform_libraries(${PROJECT_NAME})
+@@ -16,3 +16,7 @@ if (EMSCRIPTEN)
+ endif ()
+ target_link_libraries(openrct2-cli libopenrct2 Threads::Threads)
+ target_link_platform_libraries(openrct2-cli)
 +
 +if (WIN32)
-+    target_link_libraries(${PROJECT_NAME} shlwapi)
++    target_link_libraries(openrct2-cli shlwapi)
 +endif ()
 diff --git a/src/openrct2-ui/CMakeLists.txt b/src/openrct2-ui/CMakeLists.txt
-index 3478684..8e1da8d 100644
+index ac0809deb1..4755c800cc 100644
 --- a/src/openrct2-ui/CMakeLists.txt
 +++ b/src/openrct2-ui/CMakeLists.txt
-@@ -28,6 +28,7 @@ else ()
+@@ -32,6 +32,7 @@ else ()
      endif ()
      if (NOT DISABLE_VORBIS)
          PKG_CHECK_MODULES(OGG REQUIRED IMPORTED_TARGET ogg)
@@ -48,28 +48,30 @@ index 3478684..8e1da8d 100644
          PKG_CHECK_MODULES(VORBISFILE REQUIRED IMPORTED_TARGET vorbisfile)
      endif ()
  endif ()
-@@ -83,7 +84,7 @@ if (NOT DISABLE_VORBIS)
-     if (NOT MSVC AND NOT WIN32)
-         target_link_libraries(${PROJECT_NAME} PkgConfig::OGG PkgConfig::VORBISFILE)
+@@ -93,7 +94,7 @@ if (NOT DISABLE_VORBIS)
+     if (NOT MSVC AND NOT WIN32 AND NOT EMSCRIPTEN)
+         target_link_libraries(openrct2 PkgConfig::OGG PkgConfig::VORBISFILE)
      else ()
--        target_link_libraries(${PROJECT_NAME} ${OGG_LDFLAGS} ${VORBISFILE_LDFLAGS})
-+        target_link_libraries(${PROJECT_NAME} ${OGG_LDFLAGS} ${VORBISFILE_LDFLAGS} ${VORBIS_LDFLAGS})
+-        target_link_libraries(openrct2 ${OGG_LDFLAGS} ${VORBISFILE_LDFLAGS})
++        target_link_libraries(openrct2 ${OGG_LDFLAGS} ${VORBISFILE_LDFLAGS} ${VORBIS_LDFLAGS})
      endif ()
  endif ()
  
 diff --git a/src/openrct2-ui/UiContext.Win32.cpp b/src/openrct2-ui/UiContext.Win32.cpp
-index 90156d9..aa5b873 100644
+index 45d2cf881c..936cb438f0 100644
 --- a/src/openrct2-ui/UiContext.Win32.cpp
 +++ b/src/openrct2-ui/UiContext.Win32.cpp
-@@ -13,6 +13,7 @@
- // clang-format off
- #    include <windows.h>
- #    include <shellapi.h>
-+#    include <shlobj.h>
+@@ -15,7 +15,9 @@
+         #define WIN32_LEAN_AND_MEAN
+     #endif
+     #include <windows.h>
++    #include <commdlg.h>
+     #include <shellapi.h>
++    #include <shlobj.h>
+     #undef CreateWindow
  // clang-format on
- #    undef CreateWindow
  
-@@ -126,6 +127,43 @@ namespace OpenRCT2::Ui
+@@ -128,6 +130,43 @@ namespace OpenRCT2::Ui
          std::string ShowFileDialogInternal(SDL_Window* window, const FileDialogDesc& desc, bool isFolder)
          {
              std::string resultFilename;
@@ -78,7 +80,7 @@ index 90156d9..aa5b873 100644
 +            if (isFolder)
 +            {
 +                BROWSEINFOW bi = {};
-+                std::wstring wtitle = String::ToWideChar(desc.Title);
++                std::wstring wtitle = String::toWideChar(desc.Title);
 +                bi.hwndOwner = nullptr;
 +                bi.pidlRoot = nullptr;
 +                bi.pszDisplayName = path;
@@ -92,7 +94,7 @@ index 90156d9..aa5b873 100644
 +                if (list != NULL)
 +                {
 +                    SHGetPathFromIDListW(list, path);
-+                    resultFilename = String::ToUtf8(path);
++                    resultFilename = String::toUtf8(path);
 +                    MessageBoxW(NULL, path, NULL, MB_OK);
 +                }
 +            }
@@ -107,13 +109,13 @@ index 90156d9..aa5b873 100644
 +                    GetSaveFileNameW(&ofn);
 +                else
 +                    GetOpenFileNameW(&ofn);
-+                resultFilename = String::ToUtf8(ofn.lpstrFile);
++                resultFilename = String::toUtf8(ofn.lpstrFile);
 +            }
 +#else
  
              CCoInitialize coInitialize(COINIT_APARTMENTTHREADED);
              if (coInitialize)
-@@ -191,6 +229,7 @@ namespace OpenRCT2::Ui
+@@ -193,6 +232,7 @@ namespace OpenRCT2::Ui
                      }
                  }
              }
@@ -122,55 +124,55 @@ index 90156d9..aa5b873 100644
          }
  
 diff --git a/src/openrct2/CMakeLists.txt b/src/openrct2/CMakeLists.txt
-index 367939c..6f798db 100644
+index 5cbe194a0a..a4aac21d6c 100644
 --- a/src/openrct2/CMakeLists.txt
 +++ b/src/openrct2/CMakeLists.txt
-@@ -63,10 +63,14 @@ if (NOT DISABLE_NETWORK AND WIN32)
-     target_link_libraries(${PROJECT_NAME} ws2_32 crypt32 wldap32 version winmm imm32 advapi32 shell32 ole32)
+@@ -70,10 +70,14 @@ if (NOT DISABLE_NETWORK AND WIN32)
+     target_link_libraries(libopenrct2 ws2_32 crypt32 wldap32 version winmm imm32 advapi32 shell32 ole32)
  endif ()
  
 +if (WIN32)
-+    target_link_libraries(${PROJECT_NAME} shlwapi mbedtls mbedcrypto mbedx509)
++    target_link_libraries(libopenrct2 shlwapi mbedtls mbedcrypto mbedx509)
 +endif ()
 +
  if (NOT DISABLE_HTTP)
 -    if (WIN32)
--        target_link_libraries(${PROJECT_NAME} winhttp)
+-        target_link_libraries(libopenrct2 winhttp)
 -    else ()
 +    #if (WIN32)
-+    #    target_link_libraries(${PROJECT_NAME} winhttp)
++    #    target_link_libraries(libopenrct2 winhttp)
 +    #else ()
          PKG_CHECK_MODULES(LIBCURL REQUIRED libcurl)
  
-         target_include_directories(${PROJECT_NAME} SYSTEM PRIVATE ${LIBCURL_INCLUDE_DIRS})
-@@ -76,7 +80,7 @@ if (NOT DISABLE_HTTP)
+         target_include_directories(libopenrct2 SYSTEM PRIVATE ${LIBCURL_INCLUDE_DIRS})
+@@ -83,7 +87,7 @@ if (NOT DISABLE_HTTP)
          else ()
-             target_link_libraries(${PROJECT_NAME} ${LIBCURL_LIBRARIES})
+             target_link_libraries(libopenrct2 ${LIBCURL_LIBRARIES})
          endif ()
 -    endif ()
 +    #endif ()
  endif ()
  
  if (NOT DISABLE_TTF)
-@@ -137,6 +141,7 @@ if (STATIC)
-                                      ${PNG_STATIC_LIBRARIES}
+@@ -157,6 +161,7 @@ if (STATIC)
                                       ${ZLIB_STATIC_LIBRARIES}
-                                      ${LIBZIP_STATIC_LIBRARIES})
-+	set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -static")
+                                      ${LIBZIP_STATIC_LIBRARIES}
+                                      ${ZSTD_STATIC_LIBRARIES})
++    set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -static")
  else ()
-     if (NOT MSVC)
-         target_link_libraries(${PROJECT_NAME}
-@@ -153,7 +158,7 @@ endif ()
+     if (NOT MSVC AND NOT EMSCRIPTEN)
+         target_link_libraries(libopenrct2
+@@ -175,7 +180,7 @@ endif ()
  
  if (MINGW)
      # Hardcode libraries used on mingw
--    target_link_libraries(${PROJECT_NAME} crypto ws2_32 tasn1 unistring iconv p11-kit hogweed gmp nettle)
-+    target_link_libraries(${PROJECT_NAME} crypto ws2_32 iconv)
+-    target_link_libraries(libopenrct2 crypto ws2_32 tasn1 unistring iconv p11-kit hogweed gmp nettle)
++    target_link_libraries(libopenrct2 crypto ws2_32 iconv)
      # Link in libssp
-     target_link_libraries(${PROJECT_NAME} -fstack-protector-strong)
+     target_link_libraries(libopenrct2 -fstack-protector-strong)
  endif()
 diff --git a/src/openrct2/core/Crypt.CNG.cpp b/src/openrct2/core/Crypt.CNG.cpp
-index 7e0abf6..3dc97a9 100644
+index dc1b096598..f3031c5d47 100644
 --- a/src/openrct2/core/Crypt.CNG.cpp
 +++ b/src/openrct2/core/Crypt.CNG.cpp
 @@ -7,7 +7,7 @@
@@ -180,10 +182,10 @@ index 7e0abf6..3dc97a9 100644
 -#if !defined(DISABLE_NETWORK) && defined(_WIN32)
 +#if 0
  
- #    include "Crypt.h"
+     #include "Crypt.h"
  
 diff --git a/src/openrct2/core/Crypt.OpenSSL.cpp b/src/openrct2/core/Crypt.OpenSSL.cpp
-index c796129..44d683f 100644
+index 4169d72195..85c6026aa9 100644
 --- a/src/openrct2/core/Crypt.OpenSSL.cpp
 +++ b/src/openrct2/core/Crypt.OpenSSL.cpp
 @@ -7,7 +7,7 @@
@@ -193,10 +195,10 @@ index c796129..44d683f 100644
 -#if !defined(DISABLE_NETWORK) && !defined(_WIN32)
 +#if !defined(DISABLE_NETWORK)
  
- #    pragma GCC diagnostic push
- #    pragma GCC diagnostic ignored "-Wdeprecated-declarations"
+     #pragma GCC diagnostic push
+     #pragma GCC diagnostic ignored "-Wdeprecated-declarations"
 diff --git a/src/openrct2/core/Http.WinHttp.cpp b/src/openrct2/core/Http.WinHttp.cpp
-index 742a5ef..a1dc445 100644
+index a18cc5a733..bbade7d7a5 100644
 --- a/src/openrct2/core/Http.WinHttp.cpp
 +++ b/src/openrct2/core/Http.WinHttp.cpp
 @@ -7,7 +7,8 @@
@@ -207,22 +209,22 @@ index 742a5ef..a1dc445 100644
 +//#if !defined(DISABLE_HTTP) && defined(_WIN32)
 +#if 0
  
- #    include "Http.h"
+     #include "Http.h"
  
 diff --git a/src/openrct2/core/Http.cURL.cpp b/src/openrct2/core/Http.cURL.cpp
-index ec57f1c..7d3a99e 100644
+index 447a5ed0b6..2f64c6ad85 100644
 --- a/src/openrct2/core/Http.cURL.cpp
 +++ b/src/openrct2/core/Http.cURL.cpp
 @@ -7,7 +7,7 @@
   * OpenRCT2 is licensed under the GNU General Public License version 3.
   *****************************************************************************/
  
--#if !defined(DISABLE_HTTP) && !defined(_WIN32)
-+#if !defined(DISABLE_HTTP) /*&& !defined(_WIN32)*/
+-#if !defined(DISABLE_HTTP) && !defined(_WIN32) && !defined(__ANDROID__)
++#if !defined(DISABLE_HTTP) /*&& !defined(_WIN32)*/ && !defined(__ANDROID__)
  
- #    include "Http.h"
+     #include "Http.h"
  
-@@ -112,6 +112,8 @@ namespace Http
+@@ -112,6 +112,8 @@ namespace OpenRCT2::Http
          if (req.method == Method::PUT)
              curl_easy_setopt(curl, CURLOPT_UPLOAD, 1L);
  
@@ -232,10 +234,10 @@ index ec57f1c..7d3a99e 100644
          curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, true);
          curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, WriteData);
 diff --git a/src/openrct2/network/Socket.cpp b/src/openrct2/network/Socket.cpp
-index 29fc1bb..993509c 100644
+index 063b0ffe1a..66733627a7 100644
 --- a/src/openrct2/network/Socket.cpp
 +++ b/src/openrct2/network/Socket.cpp
-@@ -647,16 +647,19 @@ private:
+@@ -648,16 +648,19 @@ private:
          std::string result;
          if (addr->sin_family == AF_INET)
          {
@@ -262,19 +264,19 @@ index 29fc1bb..993509c 100644
          return result;
      }
 diff --git a/src/openrct2/platform/Platform.Win32.cpp b/src/openrct2/platform/Platform.Win32.cpp
-index 96c3c56..1acd3aa 100644
+index 8da9216b3b..e057adfb07 100644
 --- a/src/openrct2/platform/Platform.Win32.cpp
 +++ b/src/openrct2/platform/Platform.Win32.cpp
-@@ -47,6 +47,8 @@ static constexpr wchar_t SINGLE_INSTANCE_MUTEX_NAME[] = L"RollerCoaster Tycoon 2
- #    define SOFTWARE_CLASSES L"Software\\Classes"
- #    define MUI_CACHE L"Local Settings\\Software\\Microsoft\\Windows\\Shell\\MuiCache"
+@@ -52,6 +52,8 @@ static constexpr wchar_t kSingleInstanceMutexName[] = L"RollerCoaster Tycoon 2_G
+     #define SOFTWARE_CLASSES L"Software\\Classes"
+     #define MUI_CACHE L"Local Settings\\Software\\Microsoft\\Windows\\Shell\\MuiCache"
  
 +#define swprintf_s swprintf
 +
- namespace Platform
+ namespace OpenRCT2::Platform
  {
      static std::string WIN32_GetKnownFolderPath(REFKNOWNFOLDERID rfid);
-@@ -662,10 +663,14 @@ namespace Platform
+@@ -668,10 +670,14 @@ namespace OpenRCT2::Platform
          //
          wchar_t first[std::size(dateFormat)];
          wchar_t second[std::size(dateFormat)];
@@ -291,7 +293,7 @@ index 96c3c56..1acd3aa 100644
          }
 diff --git a/src/openrct2/platform/nt51shim.cpp b/src/openrct2/platform/nt51shim.cpp
 new file mode 100644
-index 0000000..732aa7c
+index 0000000000..732aa7c828
 --- /dev/null
 +++ b/src/openrct2/platform/nt51shim.cpp
 @@ -0,0 +1,140 @@
