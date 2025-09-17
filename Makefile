@@ -373,7 +373,7 @@ $(ZSTD_ARCHIVE):
 	wget https://github.com/facebook/zstd/releases/download/v$(ZSTD_VERSION)/zstd-$(ZSTD_VERSION).tar.gz -O $@
 
 $(ZSTD_DIR)/configured: $(ZSTD_DIR)/extracted
-	mkdir -p $(@D)/_build && cd $(@D)/_build && cmake ../build/cmake -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTING=OFF -DCMAKE_TOOLCHAIN_FILE=$(MAKE_DIR)/mingw32.cmake -DCMAKE_INSTALL_PREFIX=$(PREFIX_DIR) -DCMAKE_PREFIX_PATH=$(PREFIX_DIR) -DCMAKE_FIND_ROOT_PATH="/usr/i686-w64-mingw32;$(PREFIX_DIR)" -DCOMPILE_FLAGS="-march=i686"
+	mkdir -p $(@D)/_build && cd $(@D)/_build && cmake ../build/cmake -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTING=OFF -DCMAKE_TOOLCHAIN_FILE=$(MAKE_DIR)/mingw32.cmake -DCMAKE_INSTALL_PREFIX=$(PREFIX_DIR) -DCMAKE_PREFIX_PATH=$(PREFIX_DIR) -DCMAKE_FIND_ROOT_PATH="/usr/i686-w64-mingw32;$(PREFIX_DIR)" -DCOMPILE_FLAGS="-march=i686" -DZSTD_MULTITHREAD_SUPPORT=OFF
 	touch $@
 
 $(ZSTD_DIR)/installed: $(ZSTD_DIR)/built
